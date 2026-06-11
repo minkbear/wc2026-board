@@ -355,50 +355,20 @@
 
 <script>
 // ============================================================
-// ข้อมูลทั้งหมดแก้ที่นี่ (ไฟล์นี้เป็นบอร์ดแสดงผลอย่างเดียว)
+// ข้อมูลบอร์ดอยู่ใน board-data.json — แก้ข้อมูล/ผลที่ไฟล์นั้น
 // ============================================================
 
-const PEOPLE = ['พี่ตุลา','ชญานิน (1st)','วรากร','เก็ท','อิ๊ก','คุณศักดิ์','พี่กอล์ฟ','คุณเปิ๊ด','ตี๋','วรุตม์','ปอง'];
+let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [];
 
-// โพยทายผลใหญ่: 4 ทีมเข้ารอบรองฯ ของแต่ละคน
-const BIG_BETS = {
-  'พี่ตุลา':       { teams: ['สเปน','ฝรั่งเศส','อังกฤษ','อาร์เจนตินา'], orig: 'Espanol, Les Bleus, Three Lions, ฟ้าขาว' },
-  'ชญานิน (1st)':  { teams: ['เยอรมนี','ฝรั่งเศส','อาร์เจนตินา','บราซิล'] },
-  'วรากร':         { teams: ['ฝรั่งเศส','อังกฤษ','สเปน','อาร์เจนตินา'] },
-  'เก็ท':          { teams: ['สเปน','เยอรมนี','โครเอเชีย','เนเธอร์แลนด์'], orig: 'กระทิงดุ, อินทรีเหล็ก, ตาหมากรุก, กังหันสีส้ม' },
-  'อิ๊ก':          { teams: ['ฝรั่งเศส','สเปน','ญี่ปุ่น','โปรตุเกส'] },
-  'คุณศักดิ์':      { teams: ['สเปน','อาร์เจนตินา','ฝรั่งเศส','บราซิล'] },
-  'พี่กอล์ฟ':      { teams: ['อังกฤษ','ฝรั่งเศส','สเปน','โปรตุเกส'], orig: 'England, France, Spain, Portugal' },
-  'คุณเปิ๊ด':      { teams: ['อาร์เจนตินา','ฝรั่งเศส','อังกฤษ','สเปน'] },
-  'ตี๋':           { teams: ['สเปน','ฝรั่งเศส','อังกฤษ','อาร์เจนตินา'] },
-  'วรุตม์':        { teams: ['อาร์เจนตินา','อังกฤษ','สเปน','ฝรั่งเศส'] },
-  'ปอง':           { teams: ['สเปน','ฝรั่งเศส','อาร์เจนตินา','บราซิล'] }
-};
-
-// ผล 4 ทีมเข้ารอบรองฯ จริง — ใส่ชื่อทีมเมื่อรู้ผล เช่น ['สเปน','ฝรั่งเศส','อังกฤษ','บราซิล']
-const SEMIS_ACTUAL = [];
-
-// ทายผลรายวัน — ใส่ favScore/dogScore เมื่อบอลจบ (null = ยังไม่จบ)
-const DAILY = [
-  {
-    id: 1, date: '2026-06-11', fav: 'เม็กซิโก', dog: 'แอฟริกาใต้', hcp: 1,
-    favScore: null, dogScore: null,
-    picks: {
-      'ชนะ':  [{ name: 'ตี๋' }, { name: 'อิ๊ก' }, { name: 'วรากร' }],
-      'เสมอ': [{ name: 'ปอง' }, { name: 'พี่ตุลา' }, { name: 'ชญานิน (1st)' }, { name: 'คุณเปิ๊ด' }, { name: 'พี่กอล์ฟ' }, { name: 'วรุตม์' }, { name: 'คุณศักดิ์' }],
-      'แพ้':  [{ name: 'เก็ท' }]
-    }
-  },
-  {
-    id: 2, date: '2026-06-11', fav: 'เกาหลีใต้', dog: 'เช็ก', hcp: 0,
-    favScore: null, dogScore: null,
-    picks: {
-      'ชนะ':  [{ name: 'ปอง' }, { name: 'พี่ตุลา', note: 'ทายแทน Heuron' }, { name: 'ชญานิน (1st)' }, { name: 'ตี๋' }, { name: 'พี่กอล์ฟ' }, { name: 'คุณศักดิ์' }, { name: 'วรากร' }],
-      'เสมอ': [{ name: 'คุณเปิ๊ด' }, { name: 'อิ๊ก' }, { name: 'วรุตม์' }],
-      'แพ้':  [{ name: 'เก็ท' }]
-    }
-  }
-];
+async function loadData() {
+  const res = await fetch('./board-data.json', { cache: 'no-cache' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const d = await res.json();
+  PEOPLE = d.people;
+  BIG_BETS = d.bigBets;
+  SEMIS_ACTUAL = d.semisActual;
+  DAILY = d.daily;
+}
 
 // ============================================================
 // ผลสดจาก ESPN — ส่วนฟังก์ชันบริสุทธิ์ (มี test ใน tests/)
@@ -701,14 +671,24 @@ function renderBoard() {
     }).join('');
 }
 
-renderBig();
-renderDaily();
-renderBoard();
-fetchLive();
-setInterval(() => {
-  const pending = DAILY.some(m => { const s = resolveScore(m); return !s || !s.final; });
-  if (pending && !document.hidden) fetchLive();
-}, 60000);
+(async () => {
+  try {
+    await loadData();
+  } catch (e) {
+    const el = document.getElementById('live-status');
+    el.classList.add('error');
+    el.textContent = '⚠️ โหลดข้อมูลบอร์ดไม่สำเร็จ — ลองรีเฟรชหน้า (ถ้าเปิดไฟล์ตรงๆ ให้เปิดผ่านเว็บแทน)';
+    return;
+  }
+  renderBig();
+  renderDaily();
+  renderBoard();
+  fetchLive();
+  setInterval(() => {
+    const pending = DAILY.some(m => { const s = resolveScore(m); return !s || !s.final; });
+    if (pending && !document.hidden) fetchLive();
+  }, 60000);
+})();
 </script>
 </body>
 </html>
