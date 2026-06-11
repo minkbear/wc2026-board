@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f14">
+<title>บอร์ดการแทงของกลุ่ม — FIFA World Cup 2026</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --card: #151b23;
+    --card-2: #1b2330;
+    --border: #2a3441;
+    --text: #e8eef5;
+    --muted: #93a1b1;
+    --green: #41c463;
+    --green-bg: rgba(65,196,99,.13);
+    --red: #f8615a;
+    --red-bg: rgba(248,97,90,.12);
+    --yellow: #e3b341;
+    --blue: #5cb3ff;
+    --blue-bg: rgba(92,179,255,.12);
+    --accent: #2f81f7;
+    --purple: #c297ff;
+    --purple-bg: rgba(194,151,255,.14);
+    --radius: 14px;
+  }
+  html { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+    -webkit-tap-highlight-color: transparent;
+    padding: 16px 12px calc(40px + env(safe-area-inset-bottom));
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+  .container { max-width: 1080px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 16px; }
+  header h1 {
+    font-size: 1.25rem;
+    text-wrap: balance;
+    margin-bottom: 4px;
+  }
+  header p { color: var(--muted); font-size: .82rem; text-wrap: balance; }
+
+  /* ---- Tabs (segmented control) ---- */
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px;
+    margin: 0 auto 18px;
+    max-width: 520px;
+    position: sticky;
+    top: max(8px, env(safe-area-inset-top));
+    z-index: 10;
+    box-shadow: 0 4px 18px rgba(0,0,0,.35);
+  }
+  .tabs button {
+    min-height: 44px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--muted);
+    font-size: .86rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .tabs button[aria-selected="true"] { background: var(--accent); color: #fff; }
+  .tabs button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .tabs button { transition: background-color .15s, color .15s; }
+  }
+
+  section[role="tabpanel"] { display: none; }
+  section[role="tabpanel"].active { display: block; }
+  h2 { font-size: 1.05rem; margin: 16px 0 10px; text-wrap: balance; }
+  .hint { color: var(--muted); font-size: .8rem; margin-bottom: 12px; }
+
+  /* ---- แทงใหญ่ ---- */
+  .semis-banner {
+    background: linear-gradient(135deg, var(--card), var(--card-2));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-size: .88rem;
+  }
+  .semis-banner b { color: var(--purple); }
+  .semis-banner .pending { color: var(--yellow); }
+
+  .big-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  @media (min-width: 540px) { .big-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 900px) { .big-grid { grid-template-columns: repeat(3, 1fr); } }
+
+  .big-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 13px 14px;
+    min-width: 0;
+  }
+  .big-card .name {
+    font-weight: 700;
+    font-size: .95rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .big-card .name span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .big-card .hits {
+    flex-shrink: 0;
+    font-size: .74rem;
+    background: var(--green-bg);
+    color: var(--green);
+    border-radius: 12px;
+    padding: 2px 10px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .big-card .teams { margin-top: 9px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .team-chip {
+    background: var(--blue-bg);
+    color: var(--blue);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: .82rem;
+  }
+  .team-chip.hit { background: var(--green-bg); color: var(--green); font-weight: 700; }
+  .team-chip.miss { background: var(--red-bg); color: var(--red); text-decoration: line-through; opacity: .85; }
+  .big-card .orig { color: var(--muted); font-size: .7rem; margin-top: 8px; font-style: italic; overflow-wrap: break-word; }
+  .big-card .empty { color: var(--muted); font-size: .82rem; margin-top: 9px; font-style: italic; }
+
+  /* ---- แทงรายวัน ---- */
+  .match-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .match-head { margin-bottom: 12px; }
+  .match-head .title { font-size: 1rem; font-weight: 700; overflow-wrap: break-word; }
+  .match-head .title .fav { color: var(--blue); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+  .hcp-chip {
+    background: var(--blue-bg);
+    color: var(--blue);
+    border-radius: 7px;
+    padding: 2px 10px;
+    font-size: .76rem;
+    font-weight: 600;
+  }
+  .date-chip { color: var(--muted); font-size: .76rem; }
+  .score-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+  }
+  .score-line .final {
+    font-size: 1.35rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .result-tag {
+    background: var(--purple-bg);
+    color: var(--purple);
+    border-radius: 12px;
+    padding: 3px 12px;
+    font-size: .78rem;
+    font-weight: 700;
+  }
+  .waiting { color: var(--yellow); font-size: .82rem; }
+
+  .sides {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  @media (min-width: 700px) { .sides { grid-template-columns: repeat(3, 1fr); } }
+
+  .side {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    min-width: 0;
+  }
+  .side.winner { border-color: var(--green); background: rgba(65,196,99,.05); }
+  .side.loser { opacity: .6; }
+  .side h4 {
+    font-size: .82rem;
+    margin-bottom: 7px;
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .side h4 .cnt { color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+  .side.winner h4 { color: var(--green); }
+  .pick-list { display: flex; flex-wrap: wrap; gap: 5px; }
+  .pick-chip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 3px 9px;
+    font-size: .8rem;
+  }
+  .pick-chip small { color: var(--muted); font-size: .68rem; }
+  .pick-list .none { color: var(--muted); font-size: .76rem; font-style: italic; }
+
+  /* ---- ตารางสรุป ---- */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+  }
+  table.board { width: 100%; min-width: 420px; border-collapse: collapse; }
+  table.board th, table.board td {
+    padding: 9px 12px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    font-size: .84rem;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  table.board tr:last-child td { border-bottom: none; }
+  table.board th { background: rgba(47,129,247,.12); color: var(--blue); font-weight: 600; }
+  table.board td:first-child, table.board th:first-child {
+    text-align: left;
+    position: sticky;
+    left: 0;
+    background: var(--card);
+  }
+  table.board th:first-child { background: #18222e; }
+  table.board tr.top td { color: var(--green); font-weight: 700; }
+  table.board tr.top td:first-child { color: var(--green); }
+  .medal { margin-right: 4px; }
+
+  footer { text-align: center; color: var(--muted); font-size: .72rem; margin-top: 28px; text-wrap: balance; }
+
+  @media (min-width: 700px) {
+    body { padding-top: 24px; }
+    header h1 { font-size: 1.5rem; }
+    header p { font-size: .88rem; }
+    .tabs button { font-size: .92rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🏆 บอร์ดการแทงของกลุ่ม — FIFA World Cup 2026</h1>
+    <p>แทงใหญ่ (4 ทีมเข้ารอบรองฯ) และแทงรายวัน (ผลหลังบวกแต้มต่อ: แพ้ / เสมอ / ชนะ)</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="หมวดการแทง">
+    <button id="tab-big" role="tab" aria-selected="true" aria-controls="sec-big">🏆 แทงใหญ่</button>
+    <button id="tab-daily" role="tab" aria-selected="false" aria-controls="sec-daily">📅 รายวัน</button>
+    <button id="tab-board" role="tab" aria-selected="false" aria-controls="sec-board">📊 คะแนน</button>
+  </div>
+
+  <!-- ============ แทงใหญ่ ============ -->
+  <section id="sec-big" class="active" role="tabpanel" aria-labelledby="tab-big">
+    <div class="semis-banner" id="semis-banner"></div>
+    <div class="big-grid" id="big-grid"></div>
+  </section>
+
+  <!-- ============ แทงรายวัน ============ -->
+  <section id="sec-daily" role="tabpanel" aria-labelledby="tab-daily">
+    <p class="hint">กติกา: ทุกคนเลือก แพ้ / เสมอ / ชนะ (มองจากฝั่งทีมต่อ) — ผลตัดสินหลังบวกแต้มต่อ เช่น ต่อ 1 ชนะในสนาม 1 ลูกพอดี = เสมอ</p>
+    <div id="daily-list"></div>
+  </section>
+
+  <!-- ============ ตารางคะแนน ============ -->
+  <section id="sec-board" role="tabpanel" aria-labelledby="tab-board">
+    <h2>📅 คะแนนแทงรายวัน</h2>
+    <p class="hint">นับเฉพาะคู่ที่มีผลแล้ว — เรียงตามจำนวนทายถูก (เลื่อนตารางซ้าย-ขวาได้)</p>
+    <div class="table-wrap"><table class="board" id="daily-board"></table></div>
+    <h2 style="margin-top:24px">🏆 คะแนนแทงใหญ่</h2>
+    <p class="hint">จำนวนทีมที่ทายถูก จาก 4 ทีมเข้ารอบรองฯ จริง</p>
+    <div class="table-wrap"><table class="board" id="big-board"></table></div>
+  </section>
+
+  <footer>บอร์ดแสดงผลอย่างเดียว — อัปเดตข้อมูล/ผลบอลโดยแก้ไขไฟล์นี้</footer>
+</div>
+
+<script>
+// ============================================================
+// ข้อมูลทั้งหมดแก้ที่นี่ (ไฟล์นี้เป็นบอร์ดแสดงผลอย่างเดียว)
+// ============================================================
+
+const PEOPLE = ['พี่ตุลา','ชญานิน (1st)','วรากร','เก็ท','อิ๊ก','คุณศักดิ์','พี่กอล์ฟ','คุณเปิ๊ด','ตี๋','วรุตม์','ปอง'];
+
+// โพยแทงใหญ่: 4 ทีมเข้ารอบรองฯ ของแต่ละคน
+const BIG_BETS = {
+  'พี่ตุลา':       { teams: ['สเปน','ฝรั่งเศส','อังกฤษ','อาร์เจนตินา'], orig: 'Espanol, Les Bleus, Three Lions, ฟ้าขาว' },
+  'ชญานิน (1st)':  { teams: ['เยอรมนี','ฝรั่งเศส','อาร์เจนตินา','บราซิล'] },
+  'วรากร':         { teams: [] },
+  'เก็ท':          { teams: ['สเปน','เยอรมนี','โครเอเชีย','เนเธอร์แลนด์'], orig: 'กระทิงดุ, อินทรีเหล็ก, ตาหมากรุก, กังหันสีส้ม' },
+  'อิ๊ก':          { teams: ['ฝรั่งเศส','สเปน','ญี่ปุ่น','โปรตุเกส'] },
+  'คุณศักดิ์':      { teams: ['สเปน','อาร์เจนตินา','ฝรั่งเศส','บราซิล'] },
+  'พี่กอล์ฟ':      { teams: ['อังกฤษ','ฝรั่งเศส','สเปน','โปรตุเกส'], orig: 'England, France, Spain, Portugal' },
+  'คุณเปิ๊ด':      { teams: ['อาร์เจนตินา','ฝรั่งเศส','อังกฤษ','สเปน'] },
+  'ตี๋':           { teams: ['สเปน','ฝรั่งเศส','อังกฤษ','อาร์เจนตินา'] },
+  'วรุตม์':        { teams: ['อาร์เจนตินา','อังกฤษ','สเปน','ฝรั่งเศส'] },
+  'ปอง':           { teams: ['สเปน','ฝรั่งเศส','อาร์เจนตินา','บราซิล'] }
+};
+
+// ผล 4 ทีมเข้ารอบรองฯ จริง — ใส่ชื่อทีมเมื่อรู้ผล เช่น ['สเปน','ฝรั่งเศส','อังกฤษ','บราซิล']
+const SEMIS_ACTUAL = [];
+
+// แทงรายวัน — ใส่ favScore/dogScore เมื่อบอลจบ (null = ยังไม่จบ)
+const DAILY = [
+  {
+    id: 1, date: '2026-06-11', fav: 'เม็กซิโก', dog: 'แอฟริกาใต้', hcp: 1,
+    favScore: null, dogScore: null,
+    picks: {
+      'ชนะ':  [{ name: 'ตี๋' }, { name: 'อิ๊ก' }],
+      'เสมอ': [{ name: 'ปอง' }, { name: 'พี่ตุลา' }, { name: 'ชญานิน (1st)' }, { name: 'คุณเปิ๊ด' }, { name: 'พี่กอล์ฟ' }, { name: 'วรุตม์' }, { name: 'คุณศักดิ์' }],
+      'แพ้':  [{ name: 'เก็ท' }]
+    }
+  },
+  {
+    id: 2, date: '2026-06-11', fav: 'เกาหลีใต้', dog: 'เช็ก', hcp: 0,
+    favScore: null, dogScore: null,
+    picks: {
+      'ชนะ':  [{ name: 'ปอง' }, { name: 'พี่ตุลา', note: 'แทงแทน Heuron' }, { name: 'ชญานิน (1st)' }, { name: 'ตี๋' }, { name: 'พี่กอล์ฟ' }, { name: 'คุณศักดิ์' }],
+      'เสมอ': [{ name: 'คุณเปิ๊ด' }, { name: 'อิ๊ก' }, { name: 'วรุตม์' }],
+      'แพ้':  [{ name: 'เก็ท' }]
+    }
+  }
+];
+
+// ============================================================
+// ส่วนแสดงผล
+// ============================================================
+
+function esc(s) { return String(s).replace(/</g, '&lt;'); }
+
+function thaiDate(iso) {
+  const [y, mo, d] = iso.split('-').map(Number);
+  return new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
+    .format(new Date(y, mo - 1, d));
+}
+
+function handicapResult(m) {
+  const diff = (m.favScore - m.dogScore) - m.hcp;
+  if (diff > 0) return 'ชนะ';
+  if (diff < 0) return 'แพ้';
+  return 'เสมอ';
+}
+
+// ---------- Tabs ----------
+const TABS = ['big', 'daily', 'board'];
+
+function showTab(t, updateHash = true) {
+  TABS.forEach(x => {
+    document.getElementById('sec-' + x).classList.toggle('active', x === t);
+    document.getElementById('tab-' + x).setAttribute('aria-selected', String(x === t));
+  });
+  if (updateHash) history.replaceState(null, '', '#' + t);
+}
+
+TABS.forEach((t, i) => {
+  const btn = document.getElementById('tab-' + t);
+  btn.addEventListener('click', () => showTab(t));
+  btn.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const next = TABS[(i + (e.key === 'ArrowRight' ? 1 : TABS.length - 1)) % TABS.length];
+    showTab(next);
+    document.getElementById('tab-' + next).focus();
+  });
+});
+
+const initial = location.hash.slice(1);
+if (TABS.includes(initial)) showTab(initial, false);
+
+// ---------- แทงใหญ่ ----------
+function renderBig() {
+  document.getElementById('semis-banner').innerHTML = SEMIS_ACTUAL.length
+    ? '🏟 ผล 4 ทีมเข้ารอบรองฯ จริง: <b>' + SEMIS_ACTUAL.map(esc).join('</b> · <b>') + '</b>'
+    : '🏟 ผล 4 ทีมเข้ารอบรองฯ จริง: <span class="pending">ยังไม่รู้ผล — รอจบรอบ 8 ทีม</span>';
+
+  document.getElementById('big-grid').innerHTML = PEOPLE.map(p => {
+    const b = BIG_BETS[p] || { teams: [] };
+    const hits = b.teams.filter(t => SEMIS_ACTUAL.includes(t)).length;
+    let teamsHtml;
+    if (b.teams.length) {
+      teamsHtml = '<div class="teams">' + b.teams.map(t => {
+        let cls = '';
+        if (SEMIS_ACTUAL.length === 4) cls = SEMIS_ACTUAL.includes(t) ? ' hit' : ' miss';
+        else if (SEMIS_ACTUAL.includes(t)) cls = ' hit';
+        return '<span class="team-chip' + cls + '">' + esc(t) + '</span>';
+      }).join('') + '</div>' +
+      (b.orig ? '<div class="orig">ตามโพย: ' + esc(b.orig) + '</div>' : '');
+    } else {
+      teamsHtml = '<div class="empty">ยังไม่ส่งโพย</div>';
+    }
+    return '<div class="big-card">' +
+      '<div class="name"><span translate="no">' + esc(p) + '</span>' +
+      (SEMIS_ACTUAL.length && b.teams.length ? '<span class="hits">ถูก ' + hits + '/4</span>' : '') +
+      '</div>' + teamsHtml + '</div>';
+  }).join('');
+}
+
+// ---------- แทงรายวัน ----------
+function renderDaily() {
+  const sorted = DAILY.slice().sort((a, b) => b.date.localeCompare(a.date) || a.id - b.id);
+  document.getElementById('daily-list').innerHTML = sorted.map(m => {
+    const hasScore = m.favScore != null && m.dogScore != null;
+    const result = hasScore ? handicapResult(m) : null;
+
+    const sidesHtml = ['ชนะ','เสมอ','แพ้'].map(side => {
+      const arr = m.picks[side] || [];
+      let cls = '';
+      if (result) cls = side === result ? ' winner' : ' loser';
+      return '<div class="side' + cls + '">' +
+        '<h4><span>' + esc(m.fav) + ' ' + side + (result === side ? ' 🎯' : '') + '</span>' +
+        '<span class="cnt">' + arr.length + ' คน</span></h4>' +
+        '<div class="pick-list">' +
+        (arr.length
+          ? arr.map(x => '<span class="pick-chip" translate="no">' + esc(x.name) +
+              (x.note ? ' <small>(' + esc(x.note) + ')</small>' : '') + '</span>').join('')
+          : '<span class="none">— ไม่มีคนแทง —</span>') +
+        '</div></div>';
+    }).join('');
+
+    const scoreHtml = hasScore
+      ? '<div class="score-line"><span class="final">' + m.favScore + ' - ' + m.dogScore + '</span>' +
+        '<span class="result-tag">หลังต่อ ' + m.hcp + ': ' + esc(m.fav) + ' "' + result + '"</span></div>'
+      : '<div class="score-line"><span class="waiting">⏳ รอผลบอล</span></div>';
+
+    return '<div class="match-card">' +
+      '<div class="match-head">' +
+      '<div class="title"><span class="fav">' + esc(m.fav) + '</span> vs ' + esc(m.dog) + '</div>' +
+      '<div class="chips">' +
+      '<span class="hcp-chip">' + (m.hcp === 0 ? 'ไม่มีต่อ (ต่อ 0)' : 'ต่อ ' + m.hcp) + '</span>' +
+      '<span class="date-chip">📅 ' + thaiDate(m.date) + ' · คู่ที่ ' + m.id + '</span>' +
+      '</div>' +
+      scoreHtml +
+      '</div>' +
+      '<div class="sides">' + sidesHtml + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+// ---------- ตารางคะแนน ----------
+function renderBoard() {
+  const stats = {};
+  PEOPLE.forEach(p => { stats[p] = { bet: 0, correct: 0, wrong: 0 }; });
+  DAILY.forEach(m => {
+    const done = m.favScore != null && m.dogScore != null;
+    const result = done ? handicapResult(m) : null;
+    Object.entries(m.picks).forEach(([side, arr]) => {
+      arr.forEach(x => {
+        if (!stats[x.name]) stats[x.name] = { bet: 0, correct: 0, wrong: 0 };
+        stats[x.name].bet++;
+        if (done) (side === result ? stats[x.name].correct++ : stats[x.name].wrong++);
+      });
+    });
+  });
+  const medals = ['🥇','🥈','🥉'];
+  const rows = Object.entries(stats)
+    .filter(([, s]) => s.bet > 0)
+    .sort((a, b) => b[1].correct - a[1].correct || a[1].wrong - b[1].wrong);
+  document.getElementById('daily-board').innerHTML =
+    '<tr><th>ชื่อ</th><th>แทง</th><th>ถูก</th><th>ผิด</th><th>รอผล</th><th>อัตราถูก</th></tr>' +
+    rows.map(([p, s], i) => {
+      const settled = s.correct + s.wrong;
+      const rate = settled ? Math.round(s.correct / settled * 100) + '%' : '-';
+      const medal = (i < 3 && s.correct > 0) ? '<span class="medal">' + medals[i] + '</span>' : '';
+      return '<tr' + (i === 0 && s.correct > 0 ? ' class="top"' : '') +
+        '><td translate="no">' + medal + esc(p) + '</td><td>' + s.bet +
+        '</td><td>' + s.correct + '</td><td>' + s.wrong + '</td><td>' + (s.bet - settled) + '</td><td>' + rate + '</td></tr>';
+    }).join('');
+
+  const bigRows = PEOPLE
+    .map(p => {
+      const teams = (BIG_BETS[p] || {}).teams || [];
+      return [p, teams.length, teams.filter(t => SEMIS_ACTUAL.includes(t)).length];
+    })
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[2] - a[2]);
+  document.getElementById('big-board').innerHTML =
+    '<tr><th>ชื่อ</th><th>ส่งโพย</th><th>ทายถูก</th></tr>' +
+    bigRows.map(([p, n, h], i) => {
+      const medal = (i < 3 && SEMIS_ACTUAL.length > 0 && h > 0) ? '<span class="medal">' + medals[i] + '</span>' : '';
+      return '<tr' + (i === 0 && h > 0 ? ' class="top"' : '') +
+        '><td translate="no">' + medal + esc(p) + '</td><td>' + n + '/4</td><td>' +
+        (SEMIS_ACTUAL.length ? h + '/4' : '-') + '</td></tr>';
+    }).join('');
+}
+
+renderBig();
+renderDaily();
+renderBoard();
+</script>
+</body>
+</html>
