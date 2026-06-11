@@ -103,6 +103,24 @@
   .semis-banner b { color: var(--purple); }
   .semis-banner .pending { color: var(--yellow); }
 
+  .view-toggle { display: flex; gap: 6px; margin-bottom: 12px; }
+  .view-toggle button {
+    flex: 1;
+    max-width: 170px;
+    min-height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--card);
+    color: var(--muted);
+    font-size: .82rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .view-toggle button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .view-toggle button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
   .big-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -309,6 +327,10 @@
   <!-- ============ ทายผลใหญ่ ============ -->
   <section id="sec-big" class="active" role="tabpanel" aria-labelledby="tab-big">
     <div class="semis-banner" id="semis-banner"></div>
+    <div class="view-toggle" role="group" aria-label="มุมมองทายผลใหญ่">
+      <button id="vt-person" aria-pressed="true">👤 ตามบุคคล</button>
+      <button id="vt-team" aria-pressed="false">⚽ ตามทีม</button>
+    </div>
     <div class="big-grid" id="big-grid"></div>
   </section>
 
@@ -526,22 +548,22 @@ const initial = location.hash.slice(1);
 if (TABS.includes(initial)) showTab(initial, false);
 
 // ---------- ทายผลใหญ่ ----------
-function renderBig() {
-  document.getElementById('semis-banner').innerHTML = SEMIS_ACTUAL.length
-    ? '🏟 ผล 4 ทีมเข้ารอบรองฯ จริง: <b>' + SEMIS_ACTUAL.map(esc).join('</b> · <b>') + '</b>'
-    : '🏟 ผล 4 ทีมเข้ารอบรองฯ จริง: <span class="pending">ยังไม่รู้ผล — รอจบรอบ 8 ทีม</span>';
+let bigView = 'person';   // 'person' | 'team'
 
-  document.getElementById('big-grid').innerHTML = PEOPLE.map(p => {
+function teamChipClass(t) {
+  if (SEMIS_ACTUAL.length === 4) return SEMIS_ACTUAL.includes(t) ? ' hit' : ' miss';
+  return SEMIS_ACTUAL.includes(t) ? ' hit' : '';
+}
+
+function bigByPerson() {
+  return PEOPLE.map(p => {
     const b = BIG_BETS[p] || { teams: [] };
     const hits = b.teams.filter(t => SEMIS_ACTUAL.includes(t)).length;
     let teamsHtml;
     if (b.teams.length) {
-      teamsHtml = '<div class="teams">' + b.teams.map(t => {
-        let cls = '';
-        if (SEMIS_ACTUAL.length === 4) cls = SEMIS_ACTUAL.includes(t) ? ' hit' : ' miss';
-        else if (SEMIS_ACTUAL.includes(t)) cls = ' hit';
-        return '<span class="team-chip' + cls + '">' + esc(t) + '</span>';
-      }).join('') + '</div>' +
+      teamsHtml = '<div class="teams">' + b.teams.map(t =>
+        '<span class="team-chip' + teamChipClass(t) + '">' + esc(t) + '</span>'
+      ).join('') + '</div>' +
       (b.orig ? '<div class="orig">ตามโพย: ' + esc(b.orig) + '</div>' : '');
     } else {
       teamsHtml = '<div class="empty">ยังไม่ส่งโพย</div>';
@@ -552,6 +574,37 @@ function renderBig() {
       '</div>' + teamsHtml + '</div>';
   }).join('');
 }
+
+function bigByTeam() {
+  const byTeam = {};
+  PEOPLE.forEach(p => {
+    ((BIG_BETS[p] || {}).teams || []).forEach(t => (byTeam[t] = byTeam[t] || []).push(p));
+  });
+  return Object.entries(byTeam)
+    .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'th'))
+    .map(([team, people]) =>
+      '<div class="big-card">' +
+      '<div class="name"><span><span class="team-chip' + teamChipClass(team) + '">' + esc(team) + '</span></span>' +
+      '<span class="hits">' + people.length + ' คน</span></div>' +
+      '<div class="teams">' + people.map(p =>
+        '<span class="pick-chip" translate="no">' + esc(p) + '</span>'
+      ).join('') + '</div>' +
+      '</div>'
+    ).join('');
+}
+
+function renderBig() {
+  document.getElementById('semis-banner').innerHTML = SEMIS_ACTUAL.length
+    ? '🏟 ผล 4 ทีมเข้ารอบรองฯ จริง: <b>' + SEMIS_ACTUAL.map(esc).join('</b> · <b>') + '</b>'
+    : '🏟 ผล 4 ทีมเข้ารอบรองฯ จริง: <span class="pending">ยังไม่รู้ผล — รอจบรอบ 8 ทีม</span>';
+
+  document.getElementById('vt-person').setAttribute('aria-pressed', String(bigView === 'person'));
+  document.getElementById('vt-team').setAttribute('aria-pressed', String(bigView === 'team'));
+  document.getElementById('big-grid').innerHTML = bigView === 'person' ? bigByPerson() : bigByTeam();
+}
+
+document.getElementById('vt-person').addEventListener('click', () => { bigView = 'person'; renderBig(); });
+document.getElementById('vt-team').addEventListener('click', () => { bigView = 'team'; renderBig(); });
 
 // ---------- ทายผลรายวัน ----------
 function renderDaily() {
