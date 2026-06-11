@@ -194,6 +194,24 @@
     font-weight: 700;
   }
   .waiting { color: var(--yellow); font-size: .82rem; }
+  .live-status { text-align: center; color: var(--muted); font-size: .74rem; margin: -8px 0 14px; }
+  .live-status.error { color: var(--yellow); }
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--red-bg);
+    color: var(--red);
+    border-radius: 12px;
+    padding: 3px 12px;
+    font-size: .78rem;
+    font-weight: 700;
+  }
+  .live-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--red); }
+  @media (prefers-reduced-motion: no-preference) {
+    .live-badge::before { animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 50% { opacity: .35; } }
+  }
 
   .sides {
     display: grid;
@@ -280,6 +298,8 @@
     <p>ทายผลใหญ่ (4 ทีมเข้ารอบรองฯ) และทายผลรายวัน (ผลหลังบวกแต้มต่อ: แพ้ / เสมอ / ชนะ)</p>
   </header>
 
+  <p class="live-status" id="live-status" aria-live="polite"></p>
+
   <div class="tabs" role="tablist" aria-label="หมวดการทายผล">
     <button id="tab-big" role="tab" aria-selected="true" aria-controls="sec-big">🏆 ทายผลใหญ่</button>
     <button id="tab-daily" role="tab" aria-selected="false" aria-controls="sec-daily">📅 รายวัน</button>
@@ -359,10 +379,113 @@ const DAILY = [
 ];
 
 // ============================================================
+// ผลสดจาก ESPN — ส่วนฟังก์ชันบริสุทธิ์ (มี test ใน tests/)
+// [pure-start]
+const TEAM_ALIASES = {
+  'เม็กซิโก': ['mexico'], 'แอฟริกาใต้': ['south africa'],
+  'เกาหลีใต้': ['south korea', 'korea republic'], 'เช็ก': ['czechia', 'czech republic'],
+  'แคนาดา': ['canada'], 'กาตาร์': ['qatar'], 'สวิตเซอร์แลนด์': ['switzerland'],
+  'บราซิล': ['brazil'], 'โมร็อกโก': ['morocco'], 'เฮติ': ['haiti'], 'สกอตแลนด์': ['scotland'],
+  'สหรัฐอเมริกา': ['united states', 'usa'], 'ปารากวัย': ['paraguay'], 'ออสเตรเลีย': ['australia'],
+  'เยอรมนี': ['germany'], 'กือราเซา': ['curacao'], 'ไอวอรีโคสต์': ["ivory coast", "cote d'ivoire"],
+  'เอกวาดอร์': ['ecuador'], 'เนเธอร์แลนด์': ['netherlands'], 'ญี่ปุ่น': ['japan'],
+  'ตูนิเซีย': ['tunisia'], 'เบลเยียม': ['belgium'], 'อียิปต์': ['egypt'], 'อิหร่าน': ['iran'],
+  'นิวซีแลนด์': ['new zealand'], 'สเปน': ['spain'], 'เคปเวิร์ด': ['cape verde', 'cabo verde'],
+  'ซาอุดีอาระเบีย': ['saudi arabia'], 'อุรุกวัย': ['uruguay'], 'ฝรั่งเศส': ['france'],
+  'เซเนกัล': ['senegal'], 'นอร์เวย์': ['norway'], 'อาร์เจนตินา': ['argentina'],
+  'แอลจีเรีย': ['algeria'], 'ออสเตรีย': ['austria'], 'จอร์แดน': ['jordan'],
+  'โปรตุเกส': ['portugal'], 'อุซเบกิสถาน': ['uzbekistan'], 'โคลอมเบีย': ['colombia'],
+  'อังกฤษ': ['england'], 'โครเอเชีย': ['croatia'], 'กานา': ['ghana'], 'ปานามา': ['panama'],
+  'เพลย์ออฟ UEFA A': [], 'เพลย์ออฟ UEFA B': [], 'เพลย์ออฟ UEFA C': [],
+  'เพลย์ออฟ IC 1': [], 'เพลย์ออฟ IC 2': []
+};
+
+function norm(s) {
+  return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function matchesTeam(thaiName, competitor) {
+  const aliases = TEAM_ALIASES[thaiName] || [];
+  const t = (competitor && competitor.team) || {};
+  const names = [t.displayName, t.shortDisplayName, t.name].filter(Boolean).map(norm);
+  return aliases.some(a => names.includes(a));
+}
+// [pure-end]
+
+const ESPN_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=';
+const liveScores = {};                      // matchId -> {favScore, dogScore, final, detail}
+let liveState = { fetchedAt: null, error: false };
+let fetching = false;
+
+// คะแนนที่ใช้จริงของแต่ละคู่: ผลที่กรอกในไฟล์ (มาก่อนเสมอ) > ผลสด ESPN > ไม่มี
+function resolveScore(m) {
+  if (m.favScore != null && m.dogScore != null)
+    return { favScore: m.favScore, dogScore: m.dogScore, final: true, live: false };
+  const ls = liveScores[m.id];
+  if (ls) return { favScore: ls.favScore, dogScore: ls.dogScore, final: ls.final, live: !ls.final, detail: ls.detail };
+  return null;
+}
+
+async function fetchLive() {
+  if (fetching) return;
+  fetching = true;
+  const dates = [...new Set(
+    DAILY.filter(m => m.favScore == null && m.picks).map(m => m.date)
+  )];
+  try {
+    for (const d of dates) {
+      const res = await fetch(ESPN_URL + d.replaceAll('-', ''));
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      (json.events || []).forEach(ev => {
+        const comp = (ev.competitions || [])[0];
+        if (!comp || !comp.competitors) return;
+        const home = comp.competitors.find(c => c.homeAway === 'home');
+        const away = comp.competitors.find(c => c.homeAway === 'away');
+        if (!home || !away) return;
+        const st = (comp.status && comp.status.type) ? comp.status : (ev.status || {});
+        const state = st.type ? st.type.state : 'pre';   // 'pre' | 'in' | 'post'
+        if (state === 'pre') return;
+        DAILY.forEach(m => {
+          if (m.date !== d || m.favScore != null) return;
+          let fav = null, dog = null;
+          if (matchesTeam(m.fav, home) && matchesTeam(m.dog, away)) { fav = home; dog = away; }
+          else if (matchesTeam(m.fav, away) && matchesTeam(m.dog, home)) { fav = away; dog = home; }
+          if (!fav) return;
+          liveScores[m.id] = {
+            favScore: parseInt(fav.score, 10) || 0,
+            dogScore: parseInt(dog.score, 10) || 0,
+            final: state === 'post',
+            detail: (st.type && st.type.shortDetail) || ''
+          };
+        });
+      });
+    }
+    liveState = { fetchedAt: new Date(), error: false };
+  } catch (e) {
+    liveState = { fetchedAt: new Date(), error: true };
+  }
+  fetching = false;
+  renderDaily();
+  renderBoard();
+  renderLiveStatus();
+}
+
+function renderLiveStatus() {
+  const el = document.getElementById('live-status');
+  if (!liveState.fetchedAt) { el.textContent = ''; return; }
+  const t = new Intl.DateTimeFormat('th-TH', { hour: '2-digit', minute: '2-digit' }).format(liveState.fetchedAt);
+  el.classList.toggle('error', liveState.error);
+  el.textContent = liveState.error
+    ? '⚠️ ดึงผลสดไม่สำเร็จ — แสดงผลล่าสุดที่บันทึกไว้ (ลองใหม่อัตโนมัติ)'
+    : '🔴 ผลสดจาก ESPN · อัปเดตล่าสุด ' + t + ' น.';
+}
+
+// ============================================================
 // ส่วนแสดงผล
 // ============================================================
 
-function esc(s) { return String(s).replace(/</g, '&lt;'); }
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
 function thaiDate(iso) {
   const [y, mo, d] = iso.split('-').map(Number);
@@ -434,8 +557,8 @@ function renderBig() {
 function renderDaily() {
   const sorted = DAILY.slice().sort((a, b) => b.date.localeCompare(a.date) || a.id - b.id);
   document.getElementById('daily-list').innerHTML = sorted.map(m => {
-    const hasScore = m.favScore != null && m.dogScore != null;
-    const result = hasScore ? handicapResult(m) : null;
+    const s = resolveScore(m);
+    const result = (s && s.final) ? handicapResult({ ...m, favScore: s.favScore, dogScore: s.dogScore }) : null;
 
     const sidesHtml = ['ชนะ','เสมอ','แพ้'].map(side => {
       const arr = m.picks[side] || [];
@@ -452,10 +575,16 @@ function renderDaily() {
         '</div></div>';
     }).join('');
 
-    const scoreHtml = hasScore
-      ? '<div class="score-line"><span class="final">' + m.favScore + ' - ' + m.dogScore + '</span>' +
-        '<span class="result-tag">หลังต่อ ' + m.hcp + ': ' + esc(m.fav) + ' "' + result + '"</span></div>'
-      : '<div class="score-line"><span class="waiting">⏳ รอผลบอล</span></div>';
+    let scoreHtml;
+    if (s && s.live) {
+      scoreHtml = '<div class="score-line"><span class="final">' + s.favScore + ' - ' + s.dogScore + '</span>' +
+        '<span class="live-badge">LIVE' + (s.detail ? ' · ' + esc(s.detail) : '') + '</span></div>';
+    } else if (s) {
+      scoreHtml = '<div class="score-line"><span class="final">' + s.favScore + ' - ' + s.dogScore + '</span>' +
+        '<span class="result-tag">หลังต่อ ' + m.hcp + ': ' + esc(m.fav) + ' "' + result + '"</span></div>';
+    } else {
+      scoreHtml = '<div class="score-line"><span class="waiting">⏳ รอผลบอล</span></div>';
+    }
 
     return '<div class="match-card">' +
       '<div class="match-head">' +
@@ -476,8 +605,9 @@ function renderBoard() {
   const stats = {};
   PEOPLE.forEach(p => { stats[p] = { bet: 0, correct: 0, wrong: 0 }; });
   DAILY.forEach(m => {
-    const done = m.favScore != null && m.dogScore != null;
-    const result = done ? handicapResult(m) : null;
+    const s = resolveScore(m);
+    const done = s != null && s.final;
+    const result = done ? handicapResult({ ...m, favScore: s.favScore, dogScore: s.dogScore }) : null;
     Object.entries(m.picks).forEach(([side, arr]) => {
       arr.forEach(x => {
         if (!stats[x.name]) stats[x.name] = { bet: 0, correct: 0, wrong: 0 };
@@ -521,6 +651,11 @@ function renderBoard() {
 renderBig();
 renderDaily();
 renderBoard();
+fetchLive();
+setInterval(() => {
+  const pending = DAILY.some(m => { const s = resolveScore(m); return !s || !s.final; });
+  if (pending && !document.hidden) fetchLive();
+}, 60000);
 </script>
 </body>
 </html>
