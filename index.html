@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0b0f14">
-<title>บอร์ดการแทงของกลุ่ม — FIFA World Cup 2026</title>
+<title>บอร์ดทายผลลุ้นยาขมของกลุ่ม — FIFA World Cup 2026</title>
 <style>
   :root {
     --bg: #0b0f14;
@@ -91,7 +91,7 @@
   h2 { font-size: 1.05rem; margin: 16px 0 10px; text-wrap: balance; }
   .hint { color: var(--muted); font-size: .8rem; margin-bottom: 12px; }
 
-  /* ---- แทงใหญ่ ---- */
+  /* ---- ทายผลใหญ่ ---- */
   .semis-banner {
     background: linear-gradient(135deg, var(--card), var(--card-2));
     border: 1px solid var(--border);
@@ -150,7 +150,7 @@
   .big-card .orig { color: var(--muted); font-size: .7rem; margin-top: 8px; font-style: italic; overflow-wrap: break-word; }
   .big-card .empty { color: var(--muted); font-size: .82rem; margin-top: 9px; font-style: italic; }
 
-  /* ---- แทงรายวัน ---- */
+  /* ---- ทายผลรายวัน ---- */
   .match-card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -276,23 +276,23 @@
 <body>
 <div class="container">
   <header>
-    <h1>🏆 บอร์ดการแทงของกลุ่ม — FIFA World Cup 2026</h1>
-    <p>แทงใหญ่ (4 ทีมเข้ารอบรองฯ) และแทงรายวัน (ผลหลังบวกแต้มต่อ: แพ้ / เสมอ / ชนะ)</p>
+    <h1>🏆 บอร์ดทายผลลุ้นยาขมของกลุ่ม — FIFA World Cup 2026</h1>
+    <p>ทายผลใหญ่ (4 ทีมเข้ารอบรองฯ) และทายผลรายวัน (ผลหลังบวกแต้มต่อ: แพ้ / เสมอ / ชนะ)</p>
   </header>
 
-  <div class="tabs" role="tablist" aria-label="หมวดการแทง">
-    <button id="tab-big" role="tab" aria-selected="true" aria-controls="sec-big">🏆 แทงใหญ่</button>
+  <div class="tabs" role="tablist" aria-label="หมวดการทายผล">
+    <button id="tab-big" role="tab" aria-selected="true" aria-controls="sec-big">🏆 ทายผลใหญ่</button>
     <button id="tab-daily" role="tab" aria-selected="false" aria-controls="sec-daily">📅 รายวัน</button>
     <button id="tab-board" role="tab" aria-selected="false" aria-controls="sec-board">📊 คะแนน</button>
   </div>
 
-  <!-- ============ แทงใหญ่ ============ -->
+  <!-- ============ ทายผลใหญ่ ============ -->
   <section id="sec-big" class="active" role="tabpanel" aria-labelledby="tab-big">
     <div class="semis-banner" id="semis-banner"></div>
     <div class="big-grid" id="big-grid"></div>
   </section>
 
-  <!-- ============ แทงรายวัน ============ -->
+  <!-- ============ ทายผลรายวัน ============ -->
   <section id="sec-daily" role="tabpanel" aria-labelledby="tab-daily">
     <p class="hint">กติกา: ทุกคนเลือก แพ้ / เสมอ / ชนะ (มองจากฝั่งทีมต่อ) — ผลตัดสินหลังบวกแต้มต่อ เช่น ต่อ 1 ชนะในสนาม 1 ลูกพอดี = เสมอ</p>
     <div id="daily-list"></div>
@@ -300,10 +300,10 @@
 
   <!-- ============ ตารางคะแนน ============ -->
   <section id="sec-board" role="tabpanel" aria-labelledby="tab-board">
-    <h2>📅 คะแนนแทงรายวัน</h2>
+    <h2>📅 คะแนนทายผลรายวัน</h2>
     <p class="hint">นับเฉพาะคู่ที่มีผลแล้ว — เรียงตามจำนวนทายถูก (เลื่อนตารางซ้าย-ขวาได้)</p>
     <div class="table-wrap"><table class="board" id="daily-board"></table></div>
-    <h2 style="margin-top:24px">🏆 คะแนนแทงใหญ่</h2>
+    <h2 style="margin-top:24px">🏆 คะแนนทายผลใหญ่</h2>
     <p class="hint">จำนวนทีมที่ทายถูก จาก 4 ทีมเข้ารอบรองฯ จริง</p>
     <div class="table-wrap"><table class="board" id="big-board"></table></div>
   </section>
@@ -318,7 +318,7 @@
 
 const PEOPLE = ['พี่ตุลา','ชญานิน (1st)','วรากร','เก็ท','อิ๊ก','คุณศักดิ์','พี่กอล์ฟ','คุณเปิ๊ด','ตี๋','วรุตม์','ปอง'];
 
-// โพยแทงใหญ่: 4 ทีมเข้ารอบรองฯ ของแต่ละคน
+// โพยทายผลใหญ่: 4 ทีมเข้ารอบรองฯ ของแต่ละคน
 const BIG_BETS = {
   'พี่ตุลา':       { teams: ['สเปน','ฝรั่งเศส','อังกฤษ','อาร์เจนตินา'], orig: 'Espanol, Les Bleus, Three Lions, ฟ้าขาว' },
   'ชญานิน (1st)':  { teams: ['เยอรมนี','ฝรั่งเศส','อาร์เจนตินา','บราซิล'] },
@@ -336,7 +336,7 @@ const BIG_BETS = {
 // ผล 4 ทีมเข้ารอบรองฯ จริง — ใส่ชื่อทีมเมื่อรู้ผล เช่น ['สเปน','ฝรั่งเศส','อังกฤษ','บราซิล']
 const SEMIS_ACTUAL = [];
 
-// แทงรายวัน — ใส่ favScore/dogScore เมื่อบอลจบ (null = ยังไม่จบ)
+// ทายผลรายวัน — ใส่ favScore/dogScore เมื่อบอลจบ (null = ยังไม่จบ)
 const DAILY = [
   {
     id: 1, date: '2026-06-11', fav: 'เม็กซิโก', dog: 'แอฟริกาใต้', hcp: 1,
@@ -351,7 +351,7 @@ const DAILY = [
     id: 2, date: '2026-06-11', fav: 'เกาหลีใต้', dog: 'เช็ก', hcp: 0,
     favScore: null, dogScore: null,
     picks: {
-      'ชนะ':  [{ name: 'ปอง' }, { name: 'พี่ตุลา', note: 'แทงแทน Heuron' }, { name: 'ชญานิน (1st)' }, { name: 'ตี๋' }, { name: 'พี่กอล์ฟ' }, { name: 'คุณศักดิ์' }],
+      'ชนะ':  [{ name: 'ปอง' }, { name: 'พี่ตุลา', note: 'ทายแทน Heuron' }, { name: 'ชญานิน (1st)' }, { name: 'ตี๋' }, { name: 'พี่กอล์ฟ' }, { name: 'คุณศักดิ์' }],
       'เสมอ': [{ name: 'คุณเปิ๊ด' }, { name: 'อิ๊ก' }, { name: 'วรุตม์' }],
       'แพ้':  [{ name: 'เก็ท' }]
     }
@@ -402,7 +402,7 @@ TABS.forEach((t, i) => {
 const initial = location.hash.slice(1);
 if (TABS.includes(initial)) showTab(initial, false);
 
-// ---------- แทงใหญ่ ----------
+// ---------- ทายผลใหญ่ ----------
 function renderBig() {
   document.getElementById('semis-banner').innerHTML = SEMIS_ACTUAL.length
     ? '🏟 ผล 4 ทีมเข้ารอบรองฯ จริง: <b>' + SEMIS_ACTUAL.map(esc).join('</b> · <b>') + '</b>'
@@ -430,7 +430,7 @@ function renderBig() {
   }).join('');
 }
 
-// ---------- แทงรายวัน ----------
+// ---------- ทายผลรายวัน ----------
 function renderDaily() {
   const sorted = DAILY.slice().sort((a, b) => b.date.localeCompare(a.date) || a.id - b.id);
   document.getElementById('daily-list').innerHTML = sorted.map(m => {
@@ -448,7 +448,7 @@ function renderDaily() {
         (arr.length
           ? arr.map(x => '<span class="pick-chip" translate="no">' + esc(x.name) +
               (x.note ? ' <small>(' + esc(x.note) + ')</small>' : '') + '</span>').join('')
-          : '<span class="none">— ไม่มีคนแทง —</span>') +
+          : '<span class="none">— ไม่มีคนทาย —</span>') +
         '</div></div>';
     }).join('');
 
@@ -491,7 +491,7 @@ function renderBoard() {
     .filter(([, s]) => s.bet > 0)
     .sort((a, b) => b[1].correct - a[1].correct || a[1].wrong - b[1].wrong);
   document.getElementById('daily-board').innerHTML =
-    '<tr><th>ชื่อ</th><th>แทง</th><th>ถูก</th><th>ผิด</th><th>รอผล</th><th>อัตราถูก</th></tr>' +
+    '<tr><th>ชื่อ</th><th>ทาย</th><th>ถูก</th><th>ผิด</th><th>รอผล</th><th>อัตราถูก</th></tr>' +
     rows.map(([p, s], i) => {
       const settled = s.correct + s.wrong;
       const rate = settled ? Math.round(s.correct / settled * 100) + '%' : '-';
