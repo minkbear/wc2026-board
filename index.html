@@ -212,6 +212,23 @@
     font-weight: 700;
   }
   .waiting { color: var(--yellow); font-size: .82rem; }
+  .zero-zone {
+    background: var(--red-bg);
+    border: 1px solid var(--red);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 14px;
+  }
+  .zero-zone .zz-title { font-size: .85rem; font-weight: 700; color: var(--red); margin-bottom: 8px; }
+  .zero-zone .zz-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .zz-chip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 3px 10px;
+    font-size: .8rem;
+  }
+  .zz-chip small { color: var(--muted); }
   .live-status { text-align: center; color: var(--muted); font-size: .74rem; margin: -8px 0 14px; }
   .live-status.error { color: var(--yellow); }
   .live-badge {
@@ -337,6 +354,7 @@
   <!-- ============ ทายผลรายวัน ============ -->
   <section id="sec-daily" role="tabpanel" aria-labelledby="tab-daily">
     <p class="hint">กติกา: ทุกคนเลือก แพ้ / เสมอ / ชนะ (มองจากฝั่งทีมต่อ) — ผลตัดสินหลังบวกแต้มต่อ เช่น ต่อ 1 ชนะในสนาม 1 ลูกพอดี = เสมอ</p>
+    <div class="zero-zone" id="daily-zero" hidden></div>
     <div id="daily-list"></div>
   </section>
 
@@ -621,6 +639,37 @@ function renderDaily() {
       '<div class="sides">' + sidesHtml + '</div>' +
       '</div>';
   }).join('');
+
+  renderZeroZone();
+}
+
+// คนที่มีคู่ตัดสินแล้วแต่ยังทายไม่ถูกแม้แต่ข้อเดียว
+function renderZeroZone() {
+  const stats = {};
+  DAILY.forEach(m => {
+    const s = resolveScore(m);
+    if (!s || !s.final) return;
+    const result = handicapResult({ ...m, favScore: s.favScore, dogScore: s.dogScore });
+    Object.entries(m.picks).forEach(([side, arr]) => {
+      arr.forEach(x => {
+        stats[x.name] = stats[x.name] || { settled: 0, correct: 0 };
+        stats[x.name].settled++;
+        if (side === result) stats[x.name].correct++;
+      });
+    });
+  });
+  const losers = Object.entries(stats)
+    .filter(([, s]) => s.settled > 0 && s.correct === 0)
+    .sort((a, b) => b[1].settled - a[1].settled || a[0].localeCompare(b[0], 'th'));
+
+  const el = document.getElementById('daily-zero');
+  if (!losers.length) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML =
+    '<div class="zz-title">🍵 โซนยาขม — ยังทายไม่ถูกแม้แต่ข้อเดียว (' + losers.length + ' คน)</div>' +
+    '<div class="zz-list">' + losers.map(([p, s]) =>
+      '<span class="zz-chip" translate="no">' + esc(p) + ' <small>(ผิด ' + s.settled + ')</small></span>'
+    ).join('') + '</div>';
 }
 
 // ---------- ตารางคะแนน ----------
