@@ -752,12 +752,18 @@ function renderYakhom() {
     '<div class="yk-history">' + history + '</div>';
 }
 
-// คนที่มีคู่ตัดสินแล้วแต่ยังทายไม่ถูกแม้แต่ข้อเดียว
+// โซนเสี่ยงยาขม — นับเฉพาะคู่ของวันล่าสุด: ใครทายผิดทุกคู่ที่จบแล้วของวันนั้นจะติดโซน
+// (เพิ่มคู่วันใหม่เมื่อไร โซนรีเซ็ตเป็นของวันใหม่อัตโนมัติ)
 function renderZeroZone() {
+  const el = document.getElementById('daily-zero');
+  const latestDate = DAILY.length ? DAILY.map(m => m.date).sort().at(-1) : null;
+
   const stats = {};
-  DAILY.forEach(m => {
+  let settled = 0;
+  DAILY.filter(m => m.date === latestDate).forEach(m => {
     const s = resolveScore(m);
     if (!s || !s.final) return;
+    settled++;
     const result = handicapResult({ ...m, favScore: s.favScore, dogScore: s.dogScore });
     Object.entries(m.picks).forEach(([side, arr]) => {
       arr.forEach(x => {
@@ -771,11 +777,10 @@ function renderZeroZone() {
     .filter(([, s]) => s.settled > 0 && s.correct === 0)
     .sort((a, b) => b[1].settled - a[1].settled || a[0].localeCompare(b[0], 'th'));
 
-  const el = document.getElementById('daily-zero');
-  if (!losers.length) { el.hidden = true; el.innerHTML = ''; return; }
+  if (!latestDate || settled === 0 || !losers.length) { el.hidden = true; el.innerHTML = ''; return; }
   el.hidden = false;
   el.innerHTML =
-    '<div class="zz-title">🍵 โซนยาขม — ยังทายไม่ถูกแม้แต่ข้อเดียว (' + losers.length + ' คน)</div>' +
+    '<div class="zz-title">🍵 โซนเสี่ยงยาขม ' + thaiDate(latestDate) + ' — ยังทายไม่ถูกสักคู่ของวันนี้ (' + losers.length + ' คน)</div>' +
     '<div class="zz-list">' + losers.map(([p, s]) =>
       '<span class="zz-chip" translate="no">' + esc(p) + ' <small>(ผิด ' + s.settled + ')</small></span>'
     ).join('') + '</div>';
