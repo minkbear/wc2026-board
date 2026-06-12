@@ -51,14 +51,14 @@
   /* ---- Tabs (segmented control) ---- */
   .tabs {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 4px;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 4px;
     margin: 0 auto 18px;
-    max-width: 520px;
+    max-width: 640px;
     position: sticky;
     top: max(8px, env(safe-area-inset-top));
     z-index: 10;
@@ -359,6 +359,7 @@
     <button id="tab-big" role="tab" aria-selected="true" aria-controls="sec-big">🏆 ทายผลใหญ่</button>
     <button id="tab-daily" role="tab" aria-selected="false" aria-controls="sec-daily">📅 รายวัน</button>
     <button id="tab-board" role="tab" aria-selected="false" aria-controls="sec-board">📊 คะแนน</button>
+    <button id="tab-yakhom" role="tab" aria-selected="false" aria-controls="sec-yakhom">🍵 ยาขม</button>
   </div>
 
   <!-- ============ ทายผลใหญ่ ============ -->
@@ -374,7 +375,6 @@
   <!-- ============ ทายผลรายวัน ============ -->
   <section id="sec-daily" role="tabpanel" aria-labelledby="tab-daily">
     <p class="hint">กติกา: ทุกคนเลือก แพ้ / เสมอ / ชนะ (มองจากฝั่งทีมต่อ) — ผลตัดสินหลังบวกแต้มต่อ เช่น ต่อ 1 ชนะในสนาม 1 ลูกพอดี = เสมอ</p>
-    <div class="yk-zone" id="daily-yakhom" hidden></div>
     <div class="zero-zone" id="daily-zero" hidden></div>
     <div id="daily-list"></div>
   </section>
@@ -387,6 +387,13 @@
     <h2 style="margin-top:24px">🏆 คะแนนทายผลใหญ่</h2>
     <p class="hint">จำนวนทีมที่ทายถูก จาก 4 ทีมเข้ารอบรองฯ จริง</p>
     <div class="table-wrap"><table class="board" id="big-board"></table></div>
+  </section>
+
+  <!-- ============ ทำเนียบยาขม ============ -->
+  <section id="sec-yakhom" role="tabpanel" aria-labelledby="tab-yakhom">
+    <h2>🍵 ทำเนียบยาขม</h2>
+    <p class="hint">กติกา: ทายผิด<b>ทุกคู่</b>ของวันนั้น = โดนยาขม</p>
+    <div class="yk-zone" id="yakhom-board"></div>
   </section>
 
   <footer>บอร์ดแสดงผลอย่างเดียว — อัปเดตข้อมูล/ผลบอลโดยแก้ไขไฟล์ board-data.json</footer>
@@ -534,7 +541,7 @@ function handicapResult(m) {
 }
 
 // ---------- Tabs ----------
-const TABS = ['big', 'daily', 'board'];
+const TABS = ['big', 'daily', 'board', 'yakhom'];
 
 function showTab(t, updateHash = true) {
   TABS.forEach(x => {
@@ -663,14 +670,17 @@ function renderDaily() {
       '</div>';
   }).join('');
 
-  renderYakhom();
   renderZeroZone();
 }
 
 // ทำเนียบยาขม — บันทึกคนที่ทายผิดทุกคู่ของวัน (ข้อมูลจาก board-data.json)
 function renderYakhom() {
-  const el = document.getElementById('daily-yakhom');
-  if (!YAKHOM.length) { el.hidden = true; el.innerHTML = ''; return; }
+  const el = document.getElementById('yakhom-board');
+  if (!YAKHOM.length) {
+    el.innerHTML = '<div class="yk-title">ยังไม่มีใครโดนยาขม 🎉</div>' +
+      '<div class="yk-history">รายชื่อจะขึ้นที่นี่เมื่อมีคนทายผิดทุกคู่ของวัน</div>';
+    return;
+  }
 
   const counts = {};
   YAKHOM.forEach(y => y.names.forEach(n => { counts[n] = (counts[n] || 0) + 1; }));
@@ -682,12 +692,11 @@ function renderYakhom() {
     .map(y => '📅 ' + thaiDate(y.date) + ': ' + y.names.map(esc).join(', '))
     .join('<br>');
 
-  el.hidden = false;
   el.innerHTML =
-    '<div class="yk-title">🍵 ทำเนียบยาขม — ทายผิดทุกคู่ของวัน</div>' +
+    '<div class="yk-title">อันดับโดนยาขมสะสม (' + ranked.length + ' คน)</div>' +
     '<div class="yk-chips">' + ranked.map(([n, c]) =>
       '<span class="yk-chip" translate="no">' + esc(n) + ' ×' + c + '</span>').join('') + '</div>' +
-    '<div class="yk-history">' + history + '</div>';
+    '<div class="yk-history"><b>ประวัติรายวัน</b><br>' + history + '</div>';
 }
 
 // คนที่มีคู่ตัดสินแล้วแต่ยังทายไม่ถูกแม้แต่ข้อเดียว
@@ -779,6 +788,7 @@ function renderBoard() {
   renderBig();
   renderDaily();
   renderBoard();
+  renderYakhom();
   fetchLive();
   setInterval(() => {
     const pending = DAILY.some(m => { const s = resolveScore(m); return !s || !s.final; });
