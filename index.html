@@ -229,6 +229,26 @@
     font-size: .8rem;
   }
   .zz-chip small { color: var(--muted); }
+  .yk-zone {
+    background: rgba(227,179,65,.08);
+    border: 1px solid var(--yellow);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 14px;
+  }
+  .yk-zone .yk-title { font-size: .85rem; font-weight: 700; color: var(--yellow); margin-bottom: 8px; }
+  .yk-zone .yk-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .yk-chip {
+    background: var(--card);
+    border: 1px solid var(--yellow);
+    color: var(--yellow);
+    border-radius: 7px;
+    padding: 3px 10px;
+    font-size: .8rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .yk-zone .yk-history { color: var(--muted); font-size: .76rem; line-height: 1.7; }
   .live-status { text-align: center; color: var(--muted); font-size: .74rem; margin: -8px 0 14px; }
   .live-status.error { color: var(--yellow); }
   .live-badge {
@@ -354,6 +374,7 @@
   <!-- ============ ทายผลรายวัน ============ -->
   <section id="sec-daily" role="tabpanel" aria-labelledby="tab-daily">
     <p class="hint">กติกา: ทุกคนเลือก แพ้ / เสมอ / ชนะ (มองจากฝั่งทีมต่อ) — ผลตัดสินหลังบวกแต้มต่อ เช่น ต่อ 1 ชนะในสนาม 1 ลูกพอดี = เสมอ</p>
+    <div class="yk-zone" id="daily-yakhom" hidden></div>
     <div class="zero-zone" id="daily-zero" hidden></div>
     <div id="daily-list"></div>
   </section>
@@ -376,7 +397,7 @@
 // ข้อมูลบอร์ดอยู่ใน board-data.json — แก้ข้อมูล/ผลที่ไฟล์นั้น
 // ============================================================
 
-let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [];
+let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [], YAKHOM = [];
 
 async function loadData() {
   const res = await fetch('./board-data.json', { cache: 'no-cache' });
@@ -386,6 +407,7 @@ async function loadData() {
   BIG_BETS = d.bigBets;
   SEMIS_ACTUAL = d.semisActual;
   DAILY = d.daily;
+  YAKHOM = d.yakhom || [];
 }
 
 // ============================================================
@@ -640,7 +662,31 @@ function renderDaily() {
       '</div>';
   }).join('');
 
+  renderYakhom();
   renderZeroZone();
+}
+
+// ทำเนียบยาขม — บันทึกคนที่ทายผิดทุกคู่ของวัน (ข้อมูลจาก board-data.json)
+function renderYakhom() {
+  const el = document.getElementById('daily-yakhom');
+  if (!YAKHOM.length) { el.hidden = true; el.innerHTML = ''; return; }
+
+  const counts = {};
+  YAKHOM.forEach(y => y.names.forEach(n => { counts[n] = (counts[n] || 0) + 1; }));
+  const ranked = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'th'));
+
+  const history = YAKHOM.slice()
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(y => '📅 ' + thaiDate(y.date) + ': ' + y.names.map(esc).join(', '))
+    .join('<br>');
+
+  el.hidden = false;
+  el.innerHTML =
+    '<div class="yk-title">🍵 ทำเนียบยาขม — ทายผิดทุกคู่ของวัน</div>' +
+    '<div class="yk-chips">' + ranked.map(([n, c]) =>
+      '<span class="yk-chip" translate="no">' + esc(n) + ' ×' + c + '</span>').join('') + '</div>' +
+    '<div class="yk-history">' + history + '</div>';
 }
 
 // คนที่มีคู่ตัดสินแล้วแต่ยังทายไม่ถูกแม้แต่ข้อเดียว
