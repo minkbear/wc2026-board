@@ -249,6 +249,32 @@
     font-variant-numeric: tabular-nums;
   }
   .yk-zone .yk-history { color: var(--muted); font-size: .76rem; line-height: 1.7; }
+  .no-pending {
+    background: var(--card);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 22px 14px;
+    text-align: center;
+    color: var(--muted);
+    font-size: .88rem;
+    margin-bottom: 14px;
+  }
+  details.done-wrap { margin-top: 4px; }
+  details.done-wrap > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 11px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--muted);
+    touch-action: manipulation;
+  }
+  details.done-wrap > summary::-webkit-details-marker { display: none; }
+  details.done-wrap > summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  details.done-wrap[open] > summary { color: var(--text); margin-bottom: 10px; }
   .live-status { text-align: center; color: var(--muted); font-size: .74rem; margin: -8px 0 14px; }
   .live-status.error { color: var(--yellow); }
   .live-badge {
@@ -334,6 +360,7 @@
   table.board th:first-child { background: #18222e; }
   table.board tr.top td { color: var(--green); font-weight: 700; }
   table.board tr.top td:first-child { color: var(--green); }
+  table.board tr.top-yk td { color: var(--yellow); font-weight: 700; }
   .medal { margin-right: 4px; }
 
   footer { text-align: center; color: var(--muted); font-size: .72rem; margin-top: 28px; text-wrap: balance; }
@@ -392,7 +419,8 @@
   <!-- ============ ทำเนียบยาขม ============ -->
   <section id="sec-yakhom" role="tabpanel" aria-labelledby="tab-yakhom">
     <h2>🍵 ทำเนียบยาขม</h2>
-    <p class="hint">กติกา: ทายผิด<b>ทุกคู่</b>ของวันนั้น = โดนยาขม</p>
+    <p class="hint">กติกา: ทายผิด<b>ทุกคู่</b>ของวันนั้น = โดนยาขม — เรียงตามจำนวนครั้งสะสม</p>
+    <div class="table-wrap" style="margin-bottom:14px"><table class="board" id="yakhom-table"></table></div>
     <div class="yk-zone" id="yakhom-board"></div>
   </section>
 
@@ -625,9 +653,7 @@ document.getElementById('vt-person').addEventListener('click', () => { bigView =
 document.getElementById('vt-team').addEventListener('click', () => { bigView = 'team'; renderBig(); });
 
 // ---------- ทายผลรายวัน ----------
-function renderDaily() {
-  const sorted = DAILY.slice().sort((a, b) => b.date.localeCompare(a.date) || a.id - b.id);
-  document.getElementById('daily-list').innerHTML = sorted.map(m => {
+function dailyCard(m) {
     const s = resolveScore(m);
     const result = (s && s.final) ? handicapResult({ ...m, favScore: s.favScore, dogScore: s.dogScore }) : null;
 
@@ -668,24 +694,53 @@ function renderDaily() {
       '</div>' +
       '<div class="sides">' + sidesHtml + '</div>' +
       '</div>';
-  }).join('');
+}
 
+function renderDaily() {
+  const isDone = m => { const s = resolveScore(m); return s != null && s.final; };
+  // คู่ที่ยังไม่จบ: ใกล้แข่งสุดขึ้นก่อน / คู่ที่จบแล้ว: ล่าสุดขึ้นก่อน เก็บในกล่องพับ
+  const pending = DAILY.filter(m => !isDone(m))
+    .sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);
+  const finished = DAILY.filter(isDone)
+    .sort((a, b) => b.date.localeCompare(a.date) || a.id - b.id);
+
+  let html = pending.length
+    ? pending.map(dailyCard).join('')
+    : '<div class="no-pending">ไม่มีคู่ที่รอแข่ง — รอประกาศคู่ใหม่ ⚽</div>';
+
+  if (finished.length) {
+    html += '<details class="done-wrap"><summary>✅ คู่ที่จบแล้ว (' + finished.length + ')</summary>' +
+      '<div class="done-body">' + finished.map(dailyCard).join('') + '</div></details>';
+  }
+
+  document.getElementById('daily-list').innerHTML = html;
   renderZeroZone();
 }
 
 // ทำเนียบยาขม — บันทึกคนที่ทายผิดทุกคู่ของวัน (ข้อมูลจาก board-data.json)
 function renderYakhom() {
+  const tableEl = document.getElementById('yakhom-table');
   const el = document.getElementById('yakhom-board');
+
+  const counts = {};
+  YAKHOM.forEach(y => y.names.forEach(n => { counts[n] = (counts[n] || 0) + 1; }));
+
+  // ตารางสรุปต่อคน — รวมคนที่ยังไม่โดน (0 ครั้ง) เรียงโดนมากสุดก่อน
+  const rows = PEOPLE.slice()
+    .map(p => [p, counts[p] || 0])
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'th'));
+  tableEl.innerHTML =
+    '<tr><th>ชื่อ</th><th>โดนยาขม (ครั้ง)</th></tr>' +
+    rows.map(([p, c], i) =>
+      '<tr' + (c > 0 && c === rows[0][1] ? ' class="top-yk"' : '') + '><td translate="no">' +
+      (c > 0 ? '🍵 ' : '') + esc(p) + '</td><td>' + (c > 0 ? '×' + c : '-') + '</td></tr>'
+    ).join('');
+
   if (!YAKHOM.length) {
     el.innerHTML = '<div class="yk-title">ยังไม่มีใครโดนยาขม 🎉</div>' +
       '<div class="yk-history">รายชื่อจะขึ้นที่นี่เมื่อมีคนทายผิดทุกคู่ของวัน</div>';
     return;
   }
-
-  const counts = {};
-  YAKHOM.forEach(y => y.names.forEach(n => { counts[n] = (counts[n] || 0) + 1; }));
-  const ranked = Object.entries(counts)
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'th'));
 
   const history = YAKHOM.slice()
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -693,10 +748,8 @@ function renderYakhom() {
     .join('<br>');
 
   el.innerHTML =
-    '<div class="yk-title">อันดับโดนยาขมสะสม (' + ranked.length + ' คน)</div>' +
-    '<div class="yk-chips">' + ranked.map(([n, c]) =>
-      '<span class="yk-chip" translate="no">' + esc(n) + ' ×' + c + '</span>').join('') + '</div>' +
-    '<div class="yk-history"><b>ประวัติรายวัน</b><br>' + history + '</div>';
+    '<div class="yk-title">ประวัติรายวัน</div>' +
+    '<div class="yk-history">' + history + '</div>';
 }
 
 // คนที่มีคู่ตัดสินแล้วแต่ยังทายไม่ถูกแม้แต่ข้อเดียว
