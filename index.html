@@ -758,9 +758,13 @@ function renderZeroZone() {
   const el = document.getElementById('daily-zero');
   const latestDate = DAILY.length ? DAILY.map(m => m.date).sort().at(-1) : null;
 
+  const todays = DAILY.filter(m => m.date === latestDate);
+  // ถ้าคู่ของวันนั้นจบครบทุกคู่แล้ว ซ่อนโซนเสี่ยง (ดูผลสรุปได้ที่แท็บทำเนียบยาขม)
+  const allDone = todays.length > 0 && todays.every(m => { const s = resolveScore(m); return s != null && s.final; });
+
   const stats = {};
   let settled = 0;
-  DAILY.filter(m => m.date === latestDate).forEach(m => {
+  todays.forEach(m => {
     const s = resolveScore(m);
     if (!s || !s.final) return;
     settled++;
@@ -777,7 +781,7 @@ function renderZeroZone() {
     .filter(([, s]) => s.settled > 0 && s.correct === 0)
     .sort((a, b) => b[1].settled - a[1].settled || a[0].localeCompare(b[0], 'th'));
 
-  if (!latestDate || settled === 0 || !losers.length) { el.hidden = true; el.innerHTML = ''; return; }
+  if (!latestDate || allDone || settled === 0 || !losers.length) { el.hidden = true; el.innerHTML = ''; return; }
   el.hidden = false;
   el.innerHTML =
     '<div class="zz-title">🍵 โซนเสี่ยงยาขม ' + thaiDate(latestDate) + ' — ยังทายไม่ถูกสักคู่ของวันนี้ (' + losers.length + ' คน)</div>' +
