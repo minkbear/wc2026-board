@@ -361,6 +361,7 @@
   table.board tr.top td { color: var(--green); font-weight: 700; }
   table.board tr.top td:first-child { color: var(--green); }
   table.board tr.top-yk td { color: var(--yellow); font-weight: 700; }
+  table.board tr.paid-yk td { color: var(--green); }
   .medal { margin-right: 4px; }
 
   footer { text-align: center; color: var(--muted); font-size: .72rem; margin-top: 28px; text-wrap: balance; }
@@ -432,7 +433,7 @@
 // ข้อมูลบอร์ดอยู่ใน board-data.json — แก้ข้อมูล/ผลที่ไฟล์นั้น
 // ============================================================
 
-let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [], YAKHOM = [];
+let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [], YAKHOM = [], YAKHOM_PAID = {};
 
 async function loadData() {
   const res = await fetch('./board-data.json', { cache: 'no-cache' });
@@ -443,6 +444,7 @@ async function loadData() {
   SEMIS_ACTUAL = d.semisActual;
   DAILY = d.daily;
   YAKHOM = d.yakhom || [];
+  YAKHOM_PAID = d.yakhomPaid || {};
 }
 
 // ============================================================
@@ -725,15 +727,23 @@ function renderYakhom() {
   const counts = {};
   YAKHOM.forEach(y => y.names.forEach(n => { counts[n] = (counts[n] || 0) + 1; }));
 
-  // ตารางสรุปต่อคน — รวมคนที่ยังไม่โดน (0 ครั้ง) เรียงโดนมากสุดก่อน
+  // ตารางสรุปต่อคน: โดนยาขม / ใช้หนี้แล้ว / คงเหลือ — รวมคนที่ยังไม่โดน เรียงคงเหลือมากสุดก่อน
   const rows = PEOPLE.slice()
-    .map(p => [p, counts[p] || 0])
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'th'));
+    .map(p => {
+      const got = counts[p] || 0;
+      const paid = Math.min(YAKHOM_PAID[p] || 0, got);
+      return { p, got, paid, owe: got - paid };
+    })
+    .sort((a, b) => b.owe - a.owe || b.got - a.got || a.p.localeCompare(b.p, 'th'));
+  const maxOwe = rows.length ? rows[0].owe : 0;
   tableEl.innerHTML =
-    '<tr><th>ชื่อ</th><th>โดนยาขม (ครั้ง)</th></tr>' +
-    rows.map(([p, c], i) =>
-      '<tr' + (c > 0 && c === rows[0][1] ? ' class="top-yk"' : '') + '><td translate="no">' +
-      (c > 0 ? '🍵 ' : '') + esc(p) + '</td><td>' + (c > 0 ? '×' + c : '-') + '</td></tr>'
+    '<tr><th>ชื่อ</th><th>โดนยาขม</th><th>ใช้หนี้แล้ว</th><th>คงเหลือ</th></tr>' +
+    rows.map(r =>
+      '<tr' + (r.owe > 0 && r.owe === maxOwe ? ' class="top-yk"' : (r.got > 0 && r.owe === 0 ? ' class="paid-yk"' : '')) +
+      '><td translate="no">' + (r.owe > 0 ? '🍵 ' : (r.got > 0 ? '✅ ' : '')) + esc(r.p) + '</td>' +
+      '<td>' + (r.got > 0 ? '×' + r.got : '-') + '</td>' +
+      '<td>' + (r.paid > 0 ? '×' + r.paid : '-') + '</td>' +
+      '<td>' + (r.owe > 0 ? '×' + r.owe : (r.got > 0 ? 'ครบ' : '-')) + '</td></tr>'
     ).join('');
 
   if (!YAKHOM.length) {
