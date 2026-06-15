@@ -433,7 +433,7 @@
 // ข้อมูลบอร์ดอยู่ใน board-data.json — แก้ข้อมูล/ผลที่ไฟล์นั้น
 // ============================================================
 
-let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [], YAKHOM = [], YAKHOM_PAID = {};
+let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [], YAKHOM = [], YAKHOM_PAID = [];
 
 async function loadData() {
   const res = await fetch('./board-data.json', { cache: 'no-cache' });
@@ -444,7 +444,7 @@ async function loadData() {
   SEMIS_ACTUAL = d.semisActual;
   DAILY = d.daily;
   YAKHOM = d.yakhom || [];
-  YAKHOM_PAID = d.yakhomPaid || {};
+  YAKHOM_PAID = d.yakhomPaid || [];
 }
 
 // ============================================================
@@ -727,11 +727,15 @@ function renderYakhom() {
   const counts = {};
   YAKHOM.forEach(y => y.names.forEach(n => { counts[n] = (counts[n] || 0) + 1; }));
 
+  // รวมยอดใช้หนี้ต่อคนจาก log รายวัน
+  const paidTotals = {};
+  YAKHOM_PAID.forEach(e => Object.entries(e.payments).forEach(([n, c]) => { paidTotals[n] = (paidTotals[n] || 0) + c; }));
+
   // ตารางสรุปต่อคน: โดนยาขม / ใช้หนี้แล้ว / คงเหลือ — รวมคนที่ยังไม่โดน เรียงคงเหลือมากสุดก่อน
   const rows = PEOPLE.slice()
     .map(p => {
       const got = counts[p] || 0;
-      const paid = Math.min(YAKHOM_PAID[p] || 0, got);
+      const paid = Math.min(paidTotals[p] || 0, got);
       return { p, got, paid, owe: got - paid };
     })
     .sort((a, b) => b.owe - a.owe || b.got - a.got || a.p.localeCompare(b.p, 'th'));
@@ -746,9 +750,19 @@ function renderYakhom() {
       '<td>' + (r.owe > 0 ? '×' + r.owe : (r.got > 0 ? 'ครบ' : '-')) + '</td></tr>'
     ).join('');
 
+  const paidHistory = YAKHOM_PAID.slice()
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(e => '📅 ' + thaiDate(e.date) + ': ' +
+      Object.entries(e.payments).map(([n, c]) => esc(n) + ' ×' + c).join(', '))
+    .join('<br>');
+  const paidBlock = YAKHOM_PAID.length
+    ? '<div class="yk-title" style="margin-top:12px;color:var(--green)">✅ ประวัติใช้หนี้</div>' +
+      '<div class="yk-history">' + paidHistory + '</div>'
+    : '';
+
   if (!YAKHOM.length) {
     el.innerHTML = '<div class="yk-title">ยังไม่มีใครโดนยาขม 🎉</div>' +
-      '<div class="yk-history">รายชื่อจะขึ้นที่นี่เมื่อมีคนทายผิดทุกคู่ของวัน</div>';
+      '<div class="yk-history">รายชื่อจะขึ้นที่นี่เมื่อมีคนทายผิดทุกคู่ของวัน</div>' + paidBlock;
     return;
   }
 
@@ -758,8 +772,8 @@ function renderYakhom() {
     .join('<br>');
 
   el.innerHTML =
-    '<div class="yk-title">ประวัติรายวัน</div>' +
-    '<div class="yk-history">' + history + '</div>';
+    '<div class="yk-title">🍵 ประวัติโดนยาขมรายวัน</div>' +
+    '<div class="yk-history">' + history + '</div>' + paidBlock;
 }
 
 // โซนเสี่ยงยาขม — นับเฉพาะคู่ของวันล่าสุด: ใครทายผิดทุกคู่ที่จบแล้วของวันนั้นจะติดโซน
