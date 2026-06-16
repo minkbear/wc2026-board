@@ -745,7 +745,7 @@ function renderYakhom() {
   const el = document.getElementById('yakhom-board');
 
   const counts = {};
-  YAKHOM.forEach(y => y.names.forEach(n => { counts[n] = (counts[n] || 0) + 1; }));
+  YAKHOM.forEach(y => Object.entries(y.sachets).forEach(([n, c]) => { counts[n] = (counts[n] || 0) + c; }));
 
   // รวมยอดใช้หนี้ต่อคนจาก log รายวัน
   const paidTotals = {};
@@ -761,7 +761,7 @@ function renderYakhom() {
     .sort((a, b) => b.owe - a.owe || b.got - a.got || a.p.localeCompare(b.p, 'th'));
   const maxOwe = rows.length ? rows[0].owe : 0;
   tableEl.innerHTML =
-    '<tr><th>ชื่อ</th><th>โดนยาขม</th><th>ใช้หนี้แล้ว</th><th>คงเหลือ</th></tr>' +
+    '<tr><th>ชื่อ</th><th>โดนยาขม (ซอง)</th><th>ใช้หนี้แล้ว</th><th>คงเหลือ</th></tr>' +
     rows.map(r =>
       '<tr' + (r.owe > 0 && r.owe === maxOwe ? ' class="top-yk"' : (r.got > 0 && r.owe === 0 ? ' class="paid-yk"' : '')) +
       '><td translate="no">' + (r.owe > 0 ? '🍵 ' : (r.got > 0 ? '✅ ' : '')) + esc(r.p) + '</td>' +
@@ -788,7 +788,8 @@ function renderYakhom() {
 
   const history = YAKHOM.slice()
     .sort((a, b) => b.date.localeCompare(a.date))
-    .map(y => '📅 ' + thaiDate(y.date) + ': ' + y.names.map(esc).join(', '))
+    .map(y => '📅 ' + thaiDate(y.date) + ': ' +
+      Object.entries(y.sachets).map(([n, c]) => esc(n) + (c > 1 ? ' ×' + c : '')).join(', '))
     .join('<br>');
 
   el.innerHTML =
