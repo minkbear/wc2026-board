@@ -593,6 +593,21 @@ function handicapResult(m) {
   return 'เสมอ';
 }
 
+// คู่แบบ 'margin': ทายผลต่างประตูของทีมต่อ (เช่น บราซิลชนะ 2 ลูก) — ที่เหลือตกช่อง catch-all (margin = null)
+function marginResult(m, favScore, dogScore) {
+  const diff = favScore - dogScore;
+  const hit = (m.options || []).find(o => o.margin != null && o.margin === diff);
+  if (hit) return hit.key;
+  const other = (m.options || []).find(o => o.margin == null);
+  return other ? other.key : null;
+}
+
+// ผลของคู่ตามรูปแบบ: ไม่มี format = แฮนดิแคปปกติ (ชนะ/เสมอ/แพ้), format 'margin' = ทายผลต่างประตู
+function matchResult(m, favScore, dogScore) {
+  if (m.format === 'margin') return marginResult(m, favScore, dogScore);
+  return handicapResult({ ...m, favScore, dogScore });
+}
+
 // ---------- Tabs ----------
 const TABS = ['big', 'daily', 'board', 'yakhom'];
 
@@ -680,14 +695,19 @@ document.getElementById('vt-team').addEventListener('click', () => { bigView = '
 // ---------- ทายผลรายวัน ----------
 function dailyCard(m) {
     const s = resolveScore(m);
-    const result = (s && s.final) ? handicapResult({ ...m, favScore: s.favScore, dogScore: s.dogScore }) : null;
+    const result = (s && s.final) ? matchResult(m, s.favScore, s.dogScore) : null;
+    const isMargin = m.format === 'margin';
 
-    const sidesHtml = ['ชนะ','เสมอ','แพ้'].map(side => {
-      const arr = m.picks[side] || [];
+    const sides = isMargin
+      ? m.options.map(o => ({ key: o.key, head: o.margin != null ? esc(m.fav) + ' ' + esc(o.key) : esc(o.key) }))
+      : ['ชนะ','เสมอ','แพ้'].map(k => ({ key: k, head: esc(m.fav) + ' ' + esc(k) }));
+
+    const sidesHtml = sides.map(({ key, head }) => {
+      const arr = m.picks[key] || [];
       let cls = '';
-      if (result) cls = side === result ? ' winner' : ' loser';
+      if (result) cls = key === result ? ' winner' : ' loser';
       return '<div class="side' + cls + '">' +
-        '<h4><span>' + esc(m.fav) + ' ' + side + (result === side ? ' 🎯' : '') + '</span>' +
+        '<h4><span>' + head + (result === key ? ' 🎯' : '') + '</span>' +
         '<span class="cnt">' + arr.length + ' คน</span></h4>' +
         '<div class="pick-list">' +
         (arr.length
@@ -702,8 +722,9 @@ function dailyCard(m) {
       scoreHtml = '<div class="score-line"><span class="final">' + s.favScore + ' - ' + s.dogScore + '</span>' +
         '<span class="live-badge">LIVE' + (s.detail ? ' · ' + esc(s.detail) : '') + '</span></div>';
     } else if (s) {
+      const tag = isMargin ? ('ผล: ' + esc(result)) : ('หลังต่อ ' + m.hcp + ': ' + esc(m.fav) + ' "' + result + '"');
       scoreHtml = '<div class="score-line"><span class="final">' + s.favScore + ' - ' + s.dogScore + '</span>' +
-        '<span class="result-tag">หลังต่อ ' + m.hcp + ': ' + esc(m.fav) + ' "' + result + '"</span></div>';
+        '<span class="result-tag">' + tag + '</span></div>';
     } else {
       scoreHtml = '<div class="score-line"><span class="waiting">⏳ รอผลบอล</span></div>';
     }
@@ -712,7 +733,7 @@ function dailyCard(m) {
       '<div class="match-head">' +
       '<div class="title"><span class="fav">' + esc(m.fav) + '</span> vs ' + esc(m.dog) + '</div>' +
       '<div class="chips">' +
-      '<span class="hcp-chip">' + (m.hcp === 0 ? 'ไม่มีต่อ (ต่อ 0)' : 'ต่อ ' + m.hcp) + '</span>' +
+      '<span class="hcp-chip">' + (isMargin ? 'ทายผลต่างประตู' : (m.hcp === 0 ? 'ไม่มีต่อ (ต่อ 0)' : 'ต่อ ' + m.hcp)) + '</span>' +
       '<span class="date-chip">📅 ' + thaiDate(m.date) + ' · คู่ที่ ' + m.id + '</span>' +
       '</div>' +
       scoreHtml +
@@ -843,7 +864,7 @@ function renderZeroZone() {
     const s = resolveScore(m);
     if (!s || !s.final) return;
     settled++;
-    const result = handicapResult({ ...m, favScore: s.favScore, dogScore: s.dogScore });
+    const result = matchResult(m, s.favScore, s.dogScore);
     Object.entries(m.picks).forEach(([side, arr]) => {
       arr.forEach(x => {
         stats[x.name] = stats[x.name] || { settled: 0, correct: 0 };
@@ -872,7 +893,7 @@ function renderBoard() {
   DAILY.forEach(m => {
     const s = resolveScore(m);
     const done = s != null && s.final;
-    const result = done ? handicapResult({ ...m, favScore: s.favScore, dogScore: s.dogScore }) : null;
+    const result = done ? matchResult(m, s.favScore, s.dogScore) : null;
     Object.entries(m.picks).forEach(([side, arr]) => {
       arr.forEach(x => {
         if (!stats[x.name]) stats[x.name] = { bet: 0, correct: 0, wrong: 0 };
