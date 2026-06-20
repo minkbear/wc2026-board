@@ -782,12 +782,15 @@ function renderYakhom() {
   ANGEL_USED.forEach(e => Object.entries(e.uses).forEach(([n, c]) => { cardUsed[n] = (cardUsed[n] || 0) + c; }));
 
   // ตารางสรุปต่อคน: โดนยาขม / ใช้หนี้แล้ว / คงเหลือ / บัตรนางฟ้าที่ถือ — เรียงคงเหลือมากสุดก่อน
+  // บัตรนางฟ้าที่ใช้ (ANGEL_USED) = ผ่านยาขม ล้างหนี้ใบละ 1 ซอง จึงนับรวมกับเงินสดในการล้างหนี้
   const rows = PEOPLE.slice()
     .map(p => {
       const got = counts[p] || 0;
       const paid = Math.min(paidTotals[p] || 0, got);
-      const cards = Math.max((cardEarned[p] || 0) - (cardUsed[p] || 0), 0);
-      return { p, got, paid, owe: got - paid, cards };
+      const used = cardUsed[p] || 0;
+      const cleared = Math.min(paid + used, got);
+      const cards = Math.max((cardEarned[p] || 0) - used, 0);
+      return { p, got, paid, used, owe: got - cleared, cards };
     })
     .sort((a, b) => b.owe - a.owe || b.got - a.got || b.cards - a.cards || a.p.localeCompare(b.p, 'th'));
   const maxOwe = rows.length ? rows[0].owe : 0;
@@ -797,7 +800,9 @@ function renderYakhom() {
       '<tr' + (r.owe > 0 && r.owe === maxOwe ? ' class="top-yk"' : (r.got > 0 && r.owe === 0 ? ' class="paid-yk"' : '')) +
       '><td translate="no">' + (r.owe > 0 ? '🍵 ' : (r.got > 0 ? '✅ ' : '')) + esc(r.p) + '</td>' +
       '<td>' + (r.got > 0 ? '×' + r.got : '-') + '</td>' +
-      '<td>' + (r.paid > 0 ? '×' + r.paid : '-') + '</td>' +
+      '<td>' + (r.paid > 0 || r.used > 0
+        ? [r.paid > 0 ? '×' + r.paid : null, r.used > 0 ? '🃏×' + r.used : null].filter(Boolean).join(' ')
+        : '-') + '</td>' +
       '<td>' + (r.owe > 0 ? '×' + r.owe : (r.got > 0 ? 'ครบ' : '-')) + '</td>' +
       '<td>' + (r.cards > 0 ? '🃏 ×' + r.cards : '-') + '</td></tr>'
     ).join('');
