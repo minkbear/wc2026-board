@@ -485,7 +485,7 @@ const TEAM_ALIASES = {
   'ซาอุดีอาระเบีย': ['saudi arabia'], 'อุรุกวัย': ['uruguay'], 'ฝรั่งเศส': ['france'],
   'เซเนกัล': ['senegal'], 'นอร์เวย์': ['norway'], 'อาร์เจนตินา': ['argentina'],
   'แอลจีเรีย': ['algeria'], 'ออสเตรีย': ['austria'], 'จอร์แดน': ['jordan'], 'อิรัก': ['iraq'],
-  'คองโก': ['congo', 'dr congo', 'congo dr', 'democratic republic of congo'],
+  'คองโก': ['congo', 'dr congo', 'congo dr', 'democratic republic of congo'], 'สวีเดน': ['sweden'],
   'โปรตุเกส': ['portugal'], 'อุซเบกิสถาน': ['uzbekistan'], 'โคลอมเบีย': ['colombia'],
   'อังกฤษ': ['england'], 'โครเอเชีย': ['croatia'], 'กานา': ['ghana'], 'ปานามา': ['panama'],
   'บอสเนีย': ['bosnia-herzegovina', 'bosnia and herzegovina', 'bosnia-herz', 'bosnia'],
@@ -602,9 +602,10 @@ function marginResult(m, favScore, dogScore) {
   return other ? other.key : null;
 }
 
-// ผลของคู่ตามรูปแบบ: ไม่มี format = แฮนดิแคปปกติ (ชนะ/เสมอ/แพ้), format 'margin' = ทายผลต่างประตู
+// ผลของคู่ตามรูปแบบ: ไม่มี format = แฮนดิแคปปกติ, 'margin' = ทายผลต่างประตู, 'score' = ทายสกอร์เป๊ะ
 function matchResult(m, favScore, dogScore) {
   if (m.format === 'margin') return marginResult(m, favScore, dogScore);
+  if (m.format === 'score') return favScore + '-' + dogScore;   // ช่อง = สกอร์เป๊ะ "fav-dog"
   return handicapResult({ ...m, favScore, dogScore });
 }
 
@@ -697,15 +698,18 @@ function dailyCard(m) {
     const s = resolveScore(m);
     const result = (s && s.final) ? matchResult(m, s.favScore, s.dogScore) : null;
     const isMargin = m.format === 'margin';
+    const isScore = m.format === 'score';
 
     const sides = isMargin
       ? m.options.map(o => ({ key: o.key, head: o.margin != null ? esc(m.fav) + ' ' + esc(o.key) : esc(o.key) }))
+      : isScore
+      ? Object.keys(m.picks).map(k => ({ key: k, head: esc(m.fav) + ' ' + esc(k.replace('-', ' - ')) + ' ' + esc(m.dog) }))
       : ['ชนะ','เสมอ','แพ้'].map(k => ({ key: k, head: esc(m.fav) + ' ' + esc(k) }));
 
     const sidesHtml = sides.map(({ key, head }) => {
       const arr = m.picks[key] || [];
       let cls = '';
-      if (result) cls = key === result ? ' winner' : ' loser';
+      if (result) cls = key === result ? ' winner' : (isScore ? '' : ' loser');
       return '<div class="side' + cls + '">' +
         '<h4><span>' + head + (result === key ? ' 🎯' : '') + '</span>' +
         '<span class="cnt">' + arr.length + ' คน</span></h4>' +
@@ -722,7 +726,7 @@ function dailyCard(m) {
       scoreHtml = '<div class="score-line"><span class="final">' + s.favScore + ' - ' + s.dogScore + '</span>' +
         '<span class="live-badge">LIVE' + (s.detail ? ' · ' + esc(s.detail) : '') + '</span></div>';
     } else if (s) {
-      const tag = isMargin ? ('ผล: ' + esc(result)) : ('หลังต่อ ' + m.hcp + ': ' + esc(m.fav) + ' "' + result + '"');
+      const tag = (isMargin || isScore) ? ('ผล: ' + esc(result)) : ('หลังต่อ ' + m.hcp + ': ' + esc(m.fav) + ' "' + result + '"');
       scoreHtml = '<div class="score-line"><span class="final">' + s.favScore + ' - ' + s.dogScore + '</span>' +
         '<span class="result-tag">' + tag + '</span></div>';
     } else {
@@ -733,7 +737,7 @@ function dailyCard(m) {
       '<div class="match-head">' +
       '<div class="title"><span class="fav">' + esc(m.fav) + '</span> vs ' + esc(m.dog) + '</div>' +
       '<div class="chips">' +
-      '<span class="hcp-chip">' + (isMargin ? 'ทายผลต่างประตู' : (m.hcp === 0 ? 'ไม่มีต่อ (ต่อ 0)' : 'ต่อ ' + m.hcp)) + '</span>' +
+      '<span class="hcp-chip">' + (isMargin ? 'ทายผลต่างประตู' : isScore ? 'ทายสกอร์เป๊ะ' : (m.hcp === 0 ? 'ไม่มีต่อ (ต่อ 0)' : 'ต่อ ' + m.hcp)) + '</span>' +
       '<span class="date-chip">📅 ' + thaiDate(m.date) + ' · คู่ที่ ' + m.id + '</span>' +
       '</div>' +
       scoreHtml +
@@ -859,7 +863,8 @@ function renderZeroZone() {
   const el = document.getElementById('daily-zero');
   const latestDate = DAILY.length ? DAILY.map(m => m.date).sort().at(-1) : null;
 
-  const todays = DAILY.filter(m => m.date === latestDate);
+  // คู่ 'score' (ทายสกอร์เป๊ะ) ไม่มียาขม — ไม่นับในโซนเสี่ยง
+  const todays = DAILY.filter(m => m.date === latestDate && m.format !== 'score');
   // ถ้าคู่ของวันนั้นจบครบทุกคู่แล้ว ซ่อนโซนเสี่ยง (ดูผลสรุปได้ที่แท็บทำเนียบยาขม)
   const allDone = todays.length > 0 && todays.every(m => { const s = resolveScore(m); return s != null && s.final; });
 
@@ -896,6 +901,7 @@ function renderBoard() {
   const stats = {};
   PEOPLE.forEach(p => { stats[p] = { bet: 0, correct: 0, wrong: 0 }; });
   DAILY.forEach(m => {
+    if (m.format === 'score') return;   // ทายสกอร์เป๊ะเป็นโบนัส ไม่นับในตารางถูก/ผิด
     const s = resolveScore(m);
     const done = s != null && s.final;
     const result = done ? matchResult(m, s.favScore, s.dogScore) : null;
