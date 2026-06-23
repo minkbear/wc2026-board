@@ -179,6 +179,7 @@
   .match-head { margin-bottom: 12px; }
   .match-head .title { font-size: 1rem; font-weight: 700; overflow-wrap: break-word; }
   .match-head .title .fav { color: var(--blue); }
+  .match-head .match-desc { color: var(--muted); font-size: .8rem; margin-top: 4px; font-style: italic; overflow-wrap: break-word; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
   .hcp-chip {
     background: var(--blue-bg);
@@ -736,6 +737,7 @@ function dailyCard(m) {
     return '<div class="match-card">' +
       '<div class="match-head">' +
       '<div class="title"><span class="fav">' + esc(m.fav) + '</span> vs ' + esc(m.dog) + '</div>' +
+      (m.desc ? '<div class="match-desc">' + esc(m.desc) + '</div>' : '') +
       '<div class="chips">' +
       '<span class="hcp-chip">' + (isMargin ? 'ทายผลต่างประตู' : isScore ? 'ทายสกอร์เป๊ะ' : (m.hcp === 0 ? 'ไม่มีต่อ (ต่อ 0)' : 'ต่อ ' + m.hcp)) + '</span>' +
       '<span class="date-chip">📅 ' + thaiDate(m.date) + ' · คู่ที่ ' + m.id + '</span>' +
