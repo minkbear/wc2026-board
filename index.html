@@ -594,6 +594,11 @@ function handicapResult(m) {
   return 'เสมอ';
 }
 
+// ป้ายแต้มต่อ: hcp > 0 = fav ต่อ, hcp < 0 = fav เป็นทีมรองที่รับลูก, 0 = ไม่มีต่อ
+function hcpChip(h) {
+  return h === 0 ? 'ไม่มีต่อ (ต่อ 0)' : h < 0 ? 'รับ ' + (-h) : 'ต่อ ' + h;
+}
+
 // คู่แบบ 'margin': ทายผลต่างประตูของทีมต่อ (เช่น บราซิลชนะ 2 ลูก) — ที่เหลือตกช่อง catch-all (margin = null)
 function marginResult(m, favScore, dogScore) {
   const diff = favScore - dogScore;
@@ -734,7 +739,7 @@ function dailyCard(m) {
       scoreHtml = '<div class="score-line"><span class="final">ผลรวม ' + s.favScore + ' ประตู</span>' +
         '<span class="result-tag">' + (m.bonusOnly ? 'ทายถูกได้ 🃏' : 'ทายผิดโดนยาขม') + '</span></div>';
     } else if (s) {
-      const tag = (isMargin || isScore) ? ('ผล: ' + esc(result)) : ('หลังต่อ ' + m.hcp + ': ' + esc(m.fav) + ' "' + result + '"');
+      const tag = (isMargin || isScore) ? ('ผล: ' + esc(result)) : (esc(m.fav) + ' "' + result + '" · ' + hcpChip(m.hcp));
       scoreHtml = '<div class="score-line"><span class="final">' + s.favScore + ' - ' + s.dogScore + '</span>' +
         '<span class="result-tag">' + tag + '</span></div>';
     } else {
@@ -746,7 +751,7 @@ function dailyCard(m) {
       '<div class="title">' + (isTotal ? esc(m.title) : '<span class="fav">' + esc(m.fav) + '</span> vs ' + esc(m.dog)) + '</div>' +
       (m.desc ? '<div class="match-desc">' + esc(m.desc) + '</div>' : '') +
       '<div class="chips">' +
-      '<span class="hcp-chip">' + (isMargin ? 'ทายผลต่างประตู' : isScore ? 'ทายสกอร์เป๊ะ' : isTotal ? ('ทายผลรวมประตู' + (m.bonusOnly ? ' · พิเศษ 🃏' : '')) : (m.hcp === 0 ? 'ไม่มีต่อ (ต่อ 0)' : 'ต่อ ' + m.hcp)) + '</span>' +
+      '<span class="hcp-chip">' + (isMargin ? 'ทายผลต่างประตู' : isScore ? 'ทายสกอร์เป๊ะ' : isTotal ? ('ทายผลรวมประตู' + (m.bonusOnly ? ' · พิเศษ 🃏' : '')) : hcpChip(m.hcp)) + '</span>' +
       '<span class="date-chip">📅 ' + thaiDate(m.date) + ' · คู่ที่ ' + m.id + '</span>' +
       '</div>' +
       scoreHtml +
