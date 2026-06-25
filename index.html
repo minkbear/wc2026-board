@@ -165,6 +165,11 @@
   }
   .team-chip.hit { background: var(--green-bg); color: var(--green); font-weight: 700; }
   .team-chip.miss { background: var(--red-bg); color: var(--red); text-decoration: line-through; opacity: .85; }
+  .team-chip.elim { background: var(--red-bg); color: var(--red); text-decoration: line-through; opacity: .8; }
+  .team-chip.best8 { background: var(--yellow-bg, rgba(220,180,0,.14)); color: var(--yellow); }
+  .standings-note { background: var(--card-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 12px; font-size: .85rem; line-height: 1.6; }
+  .standings-note .legend { color: var(--muted); font-size: .76rem; }
+  .standings-note .elim-list b { color: var(--red); }
   .big-card .orig { color: var(--muted); font-size: .7rem; margin-top: 8px; font-style: italic; overflow-wrap: break-word; }
   .big-card .empty { color: var(--muted); font-size: .82rem; margin-top: 9px; font-style: italic; }
 
@@ -406,6 +411,7 @@
   <!-- ============ ทายผลใหญ่ ============ -->
   <section id="sec-big" class="active" role="tabpanel" aria-labelledby="tab-big">
     <div class="semis-banner" id="semis-banner"></div>
+    <div class="standings-note" id="standings-note" hidden></div>
     <div class="view-toggle" role="group" aria-label="มุมมองทายผลใหญ่">
       <button id="vt-person" aria-pressed="true">👤 ตามบุคคล</button>
       <button id="vt-team" aria-pressed="false">⚽ ตามทีม</button>
@@ -486,7 +492,7 @@ const TEAM_ALIASES = {
   'ซาอุดีอาระเบีย': ['saudi arabia'], 'อุรุกวัย': ['uruguay'], 'ฝรั่งเศส': ['france'],
   'เซเนกัล': ['senegal'], 'นอร์เวย์': ['norway'], 'อาร์เจนตินา': ['argentina'],
   'แอลจีเรีย': ['algeria'], 'ออสเตรีย': ['austria'], 'จอร์แดน': ['jordan'], 'อิรัก': ['iraq'],
-  'คองโก': ['congo', 'dr congo', 'congo dr', 'democratic republic of congo'], 'สวีเดน': ['sweden'],
+  'คองโก': ['congo', 'dr congo', 'congo dr', 'democratic republic of congo'], 'สวีเดน': ['sweden'], 'ตุรกี': ['turkiye', 'turkey'],
   'โปรตุเกส': ['portugal'], 'อุซเบกิสถาน': ['uzbekistan'], 'โคลอมเบีย': ['colombia'],
   'อังกฤษ': ['england'], 'โครเอเชีย': ['croatia'], 'กานา': ['ghana'], 'ปานามา': ['panama'],
   'บอสเนีย': ['bosnia-herzegovina', 'bosnia and herzegovina', 'bosnia-herz', 'bosnia'],
@@ -507,9 +513,45 @@ function matchesTeam(thaiName, competitor) {
 // [pure-end]
 
 const ESPN_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=';
+const STANDINGS_URL = 'https://site.api.espn.com/apis/v2/sports/soccer/fifa.world/standings';
 const liveScores = {};                      // matchId -> {favScore, dogScore, final, detail}
 let liveState = { fetchedAt: null, error: false };
 let fetching = false;
+let STANDINGS = {};                          // ชื่อทีมไทย -> { status, group, gp, pts, gd }
+
+// หาชื่อทีมไทยจากทีม ESPN ผ่าน TEAM_ALIASES (กลับทาง)
+function thaiNameFor(team) {
+  const names = [team.displayName, team.shortDisplayName, team.name].filter(Boolean).map(norm);
+  for (const thai in TEAM_ALIASES) {
+    if (TEAM_ALIASES[thai].some(a => names.includes(a))) return thai;
+  }
+  return null;
+}
+
+// ดึงตารางคะแนนรอบแบ่งกลุ่มจาก ESPN — บอกสถานะเข้ารอบ/ลุ้น/ตกรอบของแต่ละทีม
+async function fetchStandings() {
+  try {
+    const res = await fetch(STANDINGS_URL);
+    if (!res.ok) return;
+    const data = await res.json();
+    const map = {};
+    (data.children || []).forEach(g => {
+      const grp = (g.abbreviation || g.name || '').replace(/^Group\s*/i, '');
+      ((g.standings && g.standings.entries) || []).forEach(e => {
+        const thai = thaiNameFor(e.team || {});
+        if (!thai) return;
+        const st = {};
+        (e.stats || []).forEach(s => { st[s.name] = s.displayValue; });
+        const desc = (e.note && e.note.description) || '';
+        const status = /eliminat/i.test(desc) ? 'eliminated'
+          : /best\s*8/i.test(desc) ? 'best8'
+          : /advance/i.test(desc) ? 'advanced' : 'other';
+        map[thai] = { status, group: grp, gp: st.gamesPlayed || '-', pts: st.points || '-', gd: st.pointDifferential || '-' };
+      });
+    });
+    STANDINGS = map;
+  } catch (e) { /* เงียบไว้ — ถ้าโหลดไม่ได้ก็แค่ไม่โชว์ */ }
+}
 
 // คะแนนที่ใช้จริงของแต่ละคู่: ผลที่กรอกในไฟล์ (มาก่อนเสมอ) > ผลสด ESPN > ไม่มี
 function resolveScore(m) {
@@ -649,15 +691,30 @@ function teamChipClass(t) {
   return SEMIS_ACTUAL.includes(t) ? ' hit' : '';
 }
 
+const STATUS_ICON = { eliminated: ' ❌', advanced: ' ✅', best8: ' ⏳' };
+
+// ชิปทีม: คลาส hit/miss จากผล semis จริง + สถานะรอบแบ่งกลุ่มจาก ESPN (ตกรอบ/เข้ารอบ/ลุ้น)
+function teamChip(t) {
+  let cls = teamChipClass(t);
+  const s = STANDINGS[t];
+  let badge = '', title = '';
+  if (s) {
+    if (!SEMIS_ACTUAL.length && s.status === 'eliminated') cls += ' elim';
+    if (!SEMIS_ACTUAL.length && s.status === 'best8') cls += ' best8';
+    badge = STATUS_ICON[s.status] || '';
+    const label = s.status === 'eliminated' ? 'ตกรอบแล้ว' : s.status === 'advanced' ? 'เข้ารอบ 32' : s.status === 'best8' ? 'ที่ 3 ลุ้น 8 ทีมดีสุด' : '';
+    title = 'กลุ่ม ' + s.group + ' · เตะ ' + s.gp + ' นัด · ' + s.pts + ' แต้ม · ลูกได้เสีย ' + s.gd + (label ? ' · ' + label : '');
+  }
+  return '<span class="team-chip' + cls + '"' + (title ? ' title="' + esc(title) + '"' : '') + '>' + esc(t) + badge + '</span>';
+}
+
 function bigByPerson() {
   return PEOPLE.map(p => {
     const b = BIG_BETS[p] || { teams: [] };
     const hits = b.teams.filter(t => SEMIS_ACTUAL.includes(t)).length;
     let teamsHtml;
     if (b.teams.length) {
-      teamsHtml = '<div class="teams">' + b.teams.map(t =>
-        '<span class="team-chip' + teamChipClass(t) + '">' + esc(t) + '</span>'
-      ).join('') + '</div>' +
+      teamsHtml = '<div class="teams">' + b.teams.map(teamChip).join('') + '</div>' +
       (b.orig ? '<div class="orig">ตามโพย: ' + esc(b.orig) + '</div>' : '');
     } else {
       teamsHtml = '<div class="empty">ยังไม่ส่งโพย</div>';
@@ -678,7 +735,7 @@ function bigByTeam() {
     .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'th'))
     .map(([team, people]) =>
       '<div class="big-card">' +
-      '<div class="name"><span><span class="team-chip' + teamChipClass(team) + '">' + esc(team) + '</span></span>' +
+      '<div class="name"><span>' + teamChip(team) + '</span>' +
       '<span class="hits">' + people.length + ' คน</span></div>' +
       '<div class="teams">' + people.map(p =>
         '<span class="pick-chip" translate="no">' + esc(p) + '</span>'
@@ -692,9 +749,31 @@ function renderBig() {
     ? '🏟 ผล 4 ทีมเข้ารอบรองฯ จริง: <b>' + SEMIS_ACTUAL.map(esc).join('</b> · <b>') + '</b>'
     : '🏟 ผล 4 ทีมเข้ารอบรองฯ จริง: <span class="pending">ยังไม่รู้ผล — รอจบรอบ 8 ทีม</span>';
 
+  renderStandingsNote();
   document.getElementById('vt-person').setAttribute('aria-pressed', String(bigView === 'person'));
   document.getElementById('vt-team').setAttribute('aria-pressed', String(bigView === 'team'));
   document.getElementById('big-grid').innerHTML = bigView === 'person' ? bigByPerson() : bigByTeam();
+}
+
+// สรุปรอบแบ่งกลุ่ม: ทีมในโพยใหญ่ที่ "ตกรอบแล้ว" (จาก ESPN) — โพยใหญ่คือทายเข้ารอบรองฯ
+function renderStandingsNote() {
+  const el = document.getElementById('standings-note');
+  if (!Object.keys(STANDINGS).length) { el.hidden = true; return; }
+  const betTeams = [...new Set(PEOPLE.flatMap(p => (BIG_BETS[p] || {}).teams || []))];
+  const order = { eliminated: 0, best8: 1, advanced: 2, other: 3 };
+  const elim = betTeams.filter(t => STANDINGS[t] && STANDINGS[t].status === 'eliminated')
+    .sort((a, b) => a.localeCompare(b, 'th'));
+  const best8 = betTeams.filter(t => STANDINGS[t] && STANDINGS[t].status === 'best8')
+    .sort((a, b) => a.localeCompare(b, 'th'));
+  el.hidden = false;
+  el.innerHTML =
+    '<div>📊 <b>รอบแบ่งกลุ่ม (สดจาก ESPN)</b></div>' +
+    (elim.length
+      ? '<div class="elim-list">❌ ทีมในโพยใหญ่ที่<b>ตกรอบแล้ว</b>: ' +
+          elim.map(t => esc(t) + ' <span class="legend">(กลุ่ม ' + esc(STANDINGS[t].group) + ', ' + esc(STANDINGS[t].pts) + ' แต้ม)</span>').join(' · ') + '</div>'
+      : '<div>✅ ทีมในโพยใหญ่ยังไม่มีใครตกรอบ</div>') +
+    (best8.length ? '<div>⏳ ที่ลุ้น (ที่ 3 ชิง 8 ทีมดีสุด): ' + best8.map(esc).join(' · ') + '</div>' : '') +
+    '<div class="legend">หมายเหตุ: ✅ เข้ารอบ 32 · ⏳ ที่ 3 ลุ้น · ❌ ตกรอบ — เอาเมาส์ชี้ทีมเพื่อดูแต้ม/นัด (ทายผลใหญ่ = ทายทีมเข้ารอบรองฯ การตกรอบนี้ตัดสิทธิ์ลุ้นไปแล้ว)</div>';
 }
 
 document.getElementById('vt-person').addEventListener('click', () => { bigView = 'person'; renderBig(); });
@@ -972,6 +1051,7 @@ function renderBoard() {
   renderDaily();
   renderBoard();
   renderYakhom();
+  fetchStandings().then(renderBig);   // ตารางคะแนนรอบแบ่งกลุ่ม — มาแล้วค่อยรีเฟรชหน้าโพยใหญ่
   fetchLive();
   setInterval(() => {
     const pending = DAILY.some(m => { const s = resolveScore(m); return !s || !s.final; });
