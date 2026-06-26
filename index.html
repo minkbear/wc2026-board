@@ -931,7 +931,7 @@ function renderYakhom() {
 
   const paidHistory = YAKHOM_PAID.slice()
     .sort((a, b) => b.date.localeCompare(a.date))
-    .map(e => '📅 ' + thaiDate(e.date) + ': ' +
+    .map(e => '📅 ' + thaiDate(e.date) + (e.note ? ' <i>(' + esc(e.note) + ')</i>' : '') + ': ' +
       Object.entries(e.payments).map(([n, c]) => esc(n) + ' ×' + c).join(', '))
     .join('<br>');
   const paidBlock = YAKHOM_PAID.length
