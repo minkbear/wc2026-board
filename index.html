@@ -1088,6 +1088,13 @@ function renderBoard() {
   renderYakhom();
   fetchStandings().then(renderBig);   // ตารางคะแนนรอบแบ่งกลุ่ม — มาแล้วค่อยรีเฟรชหน้าโพยใหญ่
   fetchLive();
+  // auto-refresh standings ทุก 5 นาที — รีเรนเดอร์เฉพาะตอนข้อมูลเปลี่ยน (ไม่รบกวนชิปที่กางอยู่)
+  setInterval(async () => {
+    if (document.hidden) return;
+    const before = JSON.stringify(STANDINGS);
+    await fetchStandings();
+    if (JSON.stringify(STANDINGS) !== before) renderBig();
+  }, 300000);
   setInterval(() => {
     const pending = DAILY.some(m => { const s = resolveScore(m); return !s || !s.final; });
     if (pending && !document.hidden) fetchLive();
