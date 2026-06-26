@@ -464,7 +464,7 @@
 // ข้อมูลบอร์ดอยู่ใน board-data.json — แก้ข้อมูล/ผลที่ไฟล์นั้น
 // ============================================================
 
-let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [], YAKHOM = [], YAKHOM_PAID = [], ANGEL = [], ANGEL_USED = [];
+let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [], YAKHOM = [], YAKHOM_PAID = [], ANGEL = [], ANGEL_USED = [], ANGEL_FORFEITED = [];
 
 async function loadData() {
   const res = await fetch('./board-data.json', { cache: 'no-cache' });
@@ -478,6 +478,7 @@ async function loadData() {
   YAKHOM_PAID = d.yakhomPaid || [];
   ANGEL = d.angel || [];
   ANGEL_USED = d.angelUsed || [];
+  ANGEL_FORFEITED = d.angelForfeited || [];
 }
 
 // ============================================================
@@ -894,11 +895,13 @@ function renderYakhom() {
   const paidTotals = {};
   YAKHOM_PAID.forEach(e => Object.entries(e.payments).forEach(([n, c]) => { paidTotals[n] = (paidTotals[n] || 0) + c; }));
 
-  // บัตรนางฟ้า: ได้มา (3/3) − ใช้ไป = ถือไว้
+  // บัตรนางฟ้า: ได้มา − ใช้ไป (ล้างหนี้) − ถูกริบ = ถือไว้
   const cardEarned = {};
   ANGEL.forEach(a => a.names.forEach(n => { cardEarned[n] = (cardEarned[n] || 0) + 1; }));
   const cardUsed = {};
   ANGEL_USED.forEach(e => Object.entries(e.uses).forEach(([n, c]) => { cardUsed[n] = (cardUsed[n] || 0) + c; }));
+  const cardForfeited = {};
+  ANGEL_FORFEITED.forEach(e => Object.entries(e.forfeits).forEach(([n, c]) => { cardForfeited[n] = (cardForfeited[n] || 0) + c; }));
 
   // ตารางสรุปต่อคน: โดนยาขม / ใช้หนี้แล้ว / คงเหลือ / บัตรนางฟ้าที่ถือ — เรียงคงเหลือมากสุดก่อน
   // บัตรนางฟ้าที่ใช้ (ANGEL_USED) = ผ่านยาขม ล้างหนี้ใบละ 1 ซอง จึงนับรวมกับเงินสดในการล้างหนี้
@@ -907,8 +910,8 @@ function renderYakhom() {
       const got = counts[p] || 0;
       const paid = Math.min(paidTotals[p] || 0, got);
       const used = cardUsed[p] || 0;
-      const cleared = Math.min(paid + used, got);
-      const cards = Math.max((cardEarned[p] || 0) - used, 0);
+      const cleared = Math.min(paid + used, got);   // ริบไม่ล้างหนี้ — คิดเฉพาะเงินสด + บัตรที่ใช้
+      const cards = Math.max((cardEarned[p] || 0) - used - (cardForfeited[p] || 0), 0);
       return { p, got, paid, used, owe: got - cleared, cards };
     })
     .sort((a, b) => b.owe - a.owe || b.got - a.got || b.cards - a.cards || a.p.localeCompare(b.p, 'th'));
@@ -955,9 +958,19 @@ function renderYakhom() {
       '<div class="yk-history">' + cardUsedHistory + '</div>'
     : '';
 
+  const cardForfeitHistory = ANGEL_FORFEITED.slice()
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(e => '📅 ' + thaiDate(e.date) + ': ' +
+      Object.entries(e.forfeits).map(([n, c]) => esc(n) + (c > 1 ? ' ×' + c : '')).join(', '))
+    .join('<br>');
+  const cardForfeitBlock = ANGEL_FORFEITED.length
+    ? '<div class="yk-title" style="margin-top:12px;color:var(--red)">🃏 ประวัติริบบัตรนางฟ้า</div>' +
+      '<div class="yk-history">' + cardForfeitHistory + '</div>'
+    : '';
+
   if (!YAKHOM.length) {
     el.innerHTML = '<div class="yk-title">ยังไม่มีใครโดนยาขม 🎉</div>' +
-      '<div class="yk-history">รายชื่อจะขึ้นที่นี่เมื่อมีคนทายผิดทุกคู่ของวัน</div>' + paidBlock + cardBlock + cardUsedBlock;
+      '<div class="yk-history">รายชื่อจะขึ้นที่นี่เมื่อมีคนทายผิดทุกคู่ของวัน</div>' + paidBlock + cardBlock + cardUsedBlock + cardForfeitBlock;
     return;
   }
 
@@ -969,7 +982,7 @@ function renderYakhom() {
 
   el.innerHTML =
     '<div class="yk-title">🍵 ประวัติโดนยาขมรายวัน</div>' +
-    '<div class="yk-history">' + history + '</div>' + paidBlock + cardBlock + cardUsedBlock;
+    '<div class="yk-history">' + history + '</div>' + paidBlock + cardBlock + cardUsedBlock + cardForfeitBlock;
 }
 
 // โซนเสี่ยงยาขม — นับเฉพาะคู่ของวันล่าสุด: ใครทายผิดทุกคู่ที่จบแล้วของวันนั้นจะติดโซน
