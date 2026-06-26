@@ -167,6 +167,10 @@
   .team-chip.miss { background: var(--red-bg); color: var(--red); text-decoration: line-through; opacity: .85; }
   .team-chip.elim { background: var(--red-bg); color: var(--red); text-decoration: line-through; opacity: .8; }
   .team-chip.best8 { background: var(--yellow-bg, rgba(220,180,0,.14)); color: var(--yellow); }
+  .team-chip[role="button"] { cursor: pointer; }
+  .team-chip .chip-info { display: none; }
+  .team-chip.open { display: inline-block; text-decoration: none; }
+  .team-chip.open .chip-info { display: block; margin-top: 3px; font-size: .72rem; font-weight: 400; opacity: .9; text-decoration: none; white-space: normal; }
   .standings-note { background: var(--card-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 12px; font-size: .85rem; line-height: 1.6; }
   .standings-note .legend { color: var(--muted); font-size: .76rem; }
   .standings-note .elim-list b { color: var(--red); }
@@ -694,18 +698,20 @@ function teamChipClass(t) {
 const STATUS_ICON = { eliminated: ' ❌', advanced: ' ✅', best8: ' ⏳' };
 
 // ชิปทีม: คลาส hit/miss จากผล semis จริง + สถานะรอบแบ่งกลุ่มจาก ESPN (ตกรอบ/เข้ารอบ/ลุ้น)
+// รายละเอียด (กลุ่ม/แต้ม) แตะ/คลิกเพื่อกาง — ใช้ได้บนมือถือ (ไม่พึ่ง hover)
 function teamChip(t) {
   let cls = teamChipClass(t);
   const s = STANDINGS[t];
-  let badge = '', title = '';
+  let badge = '', info = '';
   if (s) {
     if (!SEMIS_ACTUAL.length && s.status === 'eliminated') cls += ' elim';
     if (!SEMIS_ACTUAL.length && s.status === 'best8') cls += ' best8';
     badge = STATUS_ICON[s.status] || '';
     const label = s.status === 'eliminated' ? 'ตกรอบแล้ว' : s.status === 'advanced' ? 'เข้ารอบ 32' : s.status === 'best8' ? 'ที่ 3 ลุ้น 8 ทีมดีสุด' : '';
-    title = 'กลุ่ม ' + s.group + ' · เตะ ' + s.gp + ' นัด · ' + s.pts + ' แต้ม · ลูกได้เสีย ' + s.gd + (label ? ' · ' + label : '');
+    info = 'กลุ่ม ' + s.group + ' · เตะ ' + s.gp + ' นัด · ' + s.pts + ' แต้ม · ลูกได้เสีย ' + s.gd + (label ? ' · ' + label : '');
   }
-  return '<span class="team-chip' + cls + '"' + (title ? ' title="' + esc(title) + '"' : '') + '>' + esc(t) + badge + '</span>';
+  return '<span class="team-chip' + cls + '"' + (info ? ' role="button" tabindex="0" aria-label="' + esc(t + ' — ' + info) + '"' : '') + '>' +
+    esc(t) + badge + (info ? '<span class="chip-info">' + esc(info) + '</span>' : '') + '</span>';
 }
 
 function bigByPerson() {
@@ -773,11 +779,27 @@ function renderStandingsNote() {
           elim.map(t => esc(t) + ' <span class="legend">(กลุ่ม ' + esc(STANDINGS[t].group) + ', ' + esc(STANDINGS[t].pts) + ' แต้ม)</span>').join(' · ') + '</div>'
       : '<div>✅ ทีมในโพยใหญ่ยังไม่มีใครตกรอบ</div>') +
     (best8.length ? '<div>⏳ ที่ลุ้น (ที่ 3 ชิง 8 ทีมดีสุด): ' + best8.map(esc).join(' · ') + '</div>' : '') +
-    '<div class="legend">หมายเหตุ: ✅ เข้ารอบ 32 · ⏳ ที่ 3 ลุ้น · ❌ ตกรอบ — เอาเมาส์ชี้ทีมเพื่อดูแต้ม/นัด (ทายผลใหญ่ = ทายทีมเข้ารอบรองฯ การตกรอบนี้ตัดสิทธิ์ลุ้นไปแล้ว)</div>';
+    '<div class="legend">หมายเหตุ: ✅ เข้ารอบ 32 · ⏳ ที่ 3 ลุ้น · ❌ ตกรอบ — แตะ/คลิกที่ทีมเพื่อดูแต้ม/นัด (ทายผลใหญ่ = ทายทีมเข้ารอบรองฯ การตกรอบนี้ตัดสิทธิ์ลุ้นไปแล้ว)</div>';
 }
 
 document.getElementById('vt-person').addEventListener('click', () => { bigView = 'person'; renderBig(); });
 document.getElementById('vt-team').addEventListener('click', () => { bigView = 'team'; renderBig(); });
+
+// แตะ/คลิกชิปทีมเพื่อกางรายละเอียดรอบแบ่งกลุ่ม (มือถือใช้ได้ — ไม่พึ่ง hover) เปิดได้ทีละชิป
+function toggleChip(chip) {
+  const wasOpen = chip.classList.contains('open');
+  document.querySelectorAll('#big-grid .team-chip.open').forEach(c => c.classList.remove('open'));
+  if (!wasOpen) chip.classList.add('open');
+}
+document.getElementById('big-grid').addEventListener('click', e => {
+  const chip = e.target.closest('.team-chip[role="button"]');
+  if (chip) toggleChip(chip);
+});
+document.getElementById('big-grid').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const chip = e.target.closest('.team-chip[role="button"]');
+  if (chip) { e.preventDefault(); toggleChip(chip); }
+});
 
 // ---------- ทายผลรายวัน ----------
 function dailyCard(m) {
