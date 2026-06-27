@@ -458,6 +458,14 @@
         <li>ทายถูก <b>0/3</b> → ไร้ซึ่งวิสัยทัศน์ โดน <b>2 ซอง</b></li>
       </ul>
     </details>
+    <details class="yk-rules">
+      <summary>🃏 กติกาบัตร — นางฟ้า &amp; คุณพระ</summary>
+      <ul>
+        <li>🃏 <b>บัตรนางฟ้า</b> — ใช้ล้างหนี้ยาขมได้ <b>ใบละ 1 ซอง</b> · ใช้ได้เฉพาะ <b>รอบแบ่งกลุ่ม</b> เท่านั้น</li>
+        <li>🪄 <b>บัตรคุณพระ</b> — ใช้ล้างหนี้ยาขมได้ <b>ใบละ 1 ซอง</b> เหมือนนางฟ้า · แต่ใช้ได้เฉพาะ <b>รอบ 32 ทีม</b> เท่านั้น (ตอนนี้เก็บไว้ก่อน ใช้ไม่ได้)</li>
+        <li>บัตรแต่ละชนิดใช้ข้ามรอบกันไม่ได้ — นางฟ้าใช้ได้แค่รอบกลุ่ม คุณพระใช้ได้แค่รอบ 32 ทีม</li>
+      </ul>
+    </details>
     <div class="table-wrap" style="margin-bottom:14px"><table class="board" id="yakhom-table"></table></div>
     <div class="yk-zone" id="yakhom-board"></div>
   </section>
@@ -470,7 +478,7 @@
 // ข้อมูลบอร์ดอยู่ใน board-data.json — แก้ข้อมูล/ผลที่ไฟล์นั้น
 // ============================================================
 
-let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [], YAKHOM = [], YAKHOM_PAID = [], ANGEL = [], ANGEL_USED = [], ANGEL_FORFEITED = [];
+let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [], YAKHOM = [], YAKHOM_PAID = [], ANGEL = [], ANGEL_USED = [], ANGEL_FORFEITED = [], KHUNPHRA = [], KHUNPHRA_USED = [], KHUNPHRA_FORFEITED = [];
 
 async function loadData() {
   const res = await fetch('./board-data.json', { cache: 'no-cache' });
@@ -485,6 +493,9 @@ async function loadData() {
   ANGEL = d.angel || [];
   ANGEL_USED = d.angelUsed || [];
   ANGEL_FORFEITED = d.angelForfeited || [];
+  KHUNPHRA = d.khunphra || [];
+  KHUNPHRA_USED = d.khunphraUsed || [];
+  KHUNPHRA_FORFEITED = d.khunphraForfeited || [];
 }
 
 // ============================================================
@@ -911,8 +922,17 @@ function renderYakhom() {
   const cardForfeited = {};
   ANGEL_FORFEITED.forEach(e => Object.entries(e.forfeits).forEach(([n, c]) => { cardForfeited[n] = (cardForfeited[n] || 0) + c; }));
 
-  // ตารางสรุปต่อคน: โดนยาขม / ใช้หนี้แล้ว / คงเหลือ / บัตรนางฟ้าที่ถือ — เรียงคงเหลือมากสุดก่อน
+  // บัตรคุณพระ: ได้มา − ใช้ไป − ถูกริบ = ถือไว้ (ใช้ได้เฉพาะรอบ 32 ทีม จึงยังไม่ล้างหนี้รอบกลุ่ม)
+  const kpEarned = {};
+  KHUNPHRA.forEach(a => a.names.forEach(n => { kpEarned[n] = (kpEarned[n] || 0) + 1; }));
+  const kpUsed = {};
+  KHUNPHRA_USED.forEach(e => Object.entries(e.uses).forEach(([n, c]) => { kpUsed[n] = (kpUsed[n] || 0) + c; }));
+  const kpForfeited = {};
+  KHUNPHRA_FORFEITED.forEach(e => Object.entries(e.forfeits).forEach(([n, c]) => { kpForfeited[n] = (kpForfeited[n] || 0) + c; }));
+
+  // ตารางสรุปต่อคน: โดนยาขม / ใช้หนี้แล้ว / คงเหลือ / บัตรนางฟ้า / บัตรคุณพระ — เรียงคงเหลือมากสุดก่อน
   // บัตรนางฟ้าที่ใช้ (ANGEL_USED) = ผ่านยาขม ล้างหนี้ใบละ 1 ซอง จึงนับรวมกับเงินสดในการล้างหนี้
+  // บัตรคุณพระใช้ได้เฉพาะรอบ 32 ทีม — ตอนนี้แค่ถือไว้ ไม่นำมาล้างหนี้รอบกลุ่ม
   const rows = PEOPLE.slice()
     .map(p => {
       const got = counts[p] || 0;
@@ -920,12 +940,13 @@ function renderYakhom() {
       const used = cardUsed[p] || 0;
       const cleared = Math.min(paid + used, got);   // ริบไม่ล้างหนี้ — คิดเฉพาะเงินสด + บัตรที่ใช้
       const cards = Math.max((cardEarned[p] || 0) - used - (cardForfeited[p] || 0), 0);
-      return { p, got, paid, used, owe: got - cleared, cards };
+      const kcards = Math.max((kpEarned[p] || 0) - (kpUsed[p] || 0) - (kpForfeited[p] || 0), 0);
+      return { p, got, paid, used, owe: got - cleared, cards, kcards };
     })
-    .sort((a, b) => b.owe - a.owe || b.got - a.got || b.cards - a.cards || a.p.localeCompare(b.p, 'th'));
+    .sort((a, b) => b.owe - a.owe || b.got - a.got || b.cards - a.cards || b.kcards - a.kcards || a.p.localeCompare(b.p, 'th'));
   const maxOwe = rows.length ? rows[0].owe : 0;
   tableEl.innerHTML =
-    '<tr><th>ชื่อ</th><th>โดนยาขม (ซอง)</th><th>ใช้หนี้แล้ว</th><th>คงเหลือ</th><th>🃏 บัตรนางฟ้า</th></tr>' +
+    '<tr><th>ชื่อ</th><th>โดนยาขม (ซอง)</th><th>ใช้หนี้แล้ว</th><th>คงเหลือ</th><th>🃏 บัตรนางฟ้า</th><th>🪄 บัตรคุณพระ</th></tr>' +
     rows.map(r =>
       '<tr' + (r.owe > 0 && r.owe === maxOwe ? ' class="top-yk"' : (r.got > 0 && r.owe === 0 ? ' class="paid-yk"' : '')) +
       '><td translate="no">' + (r.owe > 0 ? '🍵 ' : (r.got > 0 ? '✅ ' : '')) + esc(r.p) + '</td>' +
@@ -934,7 +955,8 @@ function renderYakhom() {
         ? [r.paid > 0 ? '×' + r.paid : null, r.used > 0 ? '🃏×' + r.used : null].filter(Boolean).join(' ')
         : '-') + '</td>' +
       '<td>' + (r.owe > 0 ? '×' + r.owe : (r.got > 0 ? 'ครบ' : '-')) + '</td>' +
-      '<td>' + (r.cards > 0 ? '🃏 ×' + r.cards : '-') + '</td></tr>'
+      '<td>' + (r.cards > 0 ? '🃏 ×' + r.cards : '-') + '</td>' +
+      '<td>' + (r.kcards > 0 ? '🪄 ×' + r.kcards : '-') + '</td></tr>'
     ).join('');
 
   const paidHistory = YAKHOM_PAID.slice()
@@ -981,9 +1003,45 @@ function renderYakhom() {
       '<div class="yk-history">' + cardForfeitHistory + '</div>'
     : '';
 
+  const kpHistory = KHUNPHRA.slice()
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(a => {
+      const cnt = {};
+      a.names.forEach(n => { cnt[n] = (cnt[n] || 0) + 1; });
+      return '📅 ' + thaiDate(a.date) + ': ' +
+        Object.entries(cnt).map(([n, c]) => esc(n) + (c > 1 ? ' ×' + c : '')).join(', ');
+    })
+    .join('<br>');
+  const kpBlock = KHUNPHRA.length
+    ? '<div class="yk-title" style="margin-top:12px">🪄 ประวัติได้บัตรคุณพระ (ใช้รอบ 32 ทีม)</div>' +
+      '<div class="yk-history">' + kpHistory + '</div>'
+    : '';
+
+  const kpUsedHistory = KHUNPHRA_USED.slice()
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(e => '📅 ' + thaiDate(e.date) + ': ' +
+      Object.entries(e.uses).map(([n, c]) => esc(n) + (c > 1 ? ' ×' + c : '')).join(', '))
+    .join('<br>');
+  const kpUsedBlock = KHUNPHRA_USED.length
+    ? '<div class="yk-title" style="margin-top:12px">🪄 ประวัติการใช้บัตรคุณพระ</div>' +
+      '<div class="yk-history">' + kpUsedHistory + '</div>'
+    : '';
+
+  const kpForfeitHistory = KHUNPHRA_FORFEITED.slice()
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(e => '📅 ' + thaiDate(e.date) + ': ' +
+      Object.entries(e.forfeits).map(([n, c]) => esc(n) + (c > 1 ? ' ×' + c : '')).join(', '))
+    .join('<br>');
+  const kpForfeitBlock = KHUNPHRA_FORFEITED.length
+    ? '<div class="yk-title" style="margin-top:12px;color:var(--red)">🪄 ประวัติริบบัตรคุณพระ</div>' +
+      '<div class="yk-history">' + kpForfeitHistory + '</div>'
+    : '';
+
+  const cardBlocks = cardBlock + cardUsedBlock + cardForfeitBlock + kpBlock + kpUsedBlock + kpForfeitBlock;
+
   if (!YAKHOM.length) {
     el.innerHTML = '<div class="yk-title">ยังไม่มีใครโดนยาขม 🎉</div>' +
-      '<div class="yk-history">รายชื่อจะขึ้นที่นี่เมื่อมีคนทายผิดทุกคู่ของวัน</div>' + paidBlock + cardBlock + cardUsedBlock + cardForfeitBlock;
+      '<div class="yk-history">รายชื่อจะขึ้นที่นี่เมื่อมีคนทายผิดทุกคู่ของวัน</div>' + paidBlock + cardBlocks;
     return;
   }
 
@@ -995,7 +1053,7 @@ function renderYakhom() {
 
   el.innerHTML =
     '<div class="yk-title">🍵 ประวัติโดนยาขมรายวัน</div>' +
-    '<div class="yk-history">' + history + '</div>' + paidBlock + cardBlock + cardUsedBlock + cardForfeitBlock;
+    '<div class="yk-history">' + history + '</div>' + paidBlock + cardBlocks;
 }
 
 // โซนเสี่ยงยาขม — นับเฉพาะคู่ของวันล่าสุด: ใครทายผิดทุกคู่ที่จบแล้วของวันนั้นจะติดโซน
