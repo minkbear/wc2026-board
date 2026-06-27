@@ -244,26 +244,37 @@
     font-size: .8rem;
   }
   .zz-chip small { color: var(--muted); }
-  .yk-zone {
-    background: rgba(227,179,65,.08);
-    border: 1px solid var(--yellow);
-    border-radius: var(--radius);
-    padding: 12px 14px;
-    margin-bottom: 14px;
-  }
-  .yk-zone .yk-title { font-size: .85rem; font-weight: 700; color: var(--yellow); margin-bottom: 8px; }
-  .yk-zone .yk-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-  .yk-chip {
+  /* ---- ประวัติยาขม: sub-tabs + ตาราง ---- */
+  .yk-hist-title { font-size: .9rem; font-weight: 700; color: var(--text); margin: 4px 0 8px; }
+  .yk-subtabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
     background: var(--card);
-    border: 1px solid var(--yellow);
-    color: var(--yellow);
-    border-radius: 7px;
-    padding: 3px 10px;
-    font-size: .8rem;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 10px;
   }
-  .yk-zone .yk-history { color: var(--muted); font-size: .76rem; line-height: 1.7; }
+  .yk-subtabs button {
+    min-height: 38px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--muted);
+    font-size: .8rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .yk-subtabs button[aria-selected="true"] { background: var(--accent); color: #fff; }
+  .yk-subtabs button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  @media (prefers-reduced-motion: no-preference) { .yk-subtabs button { transition: background-color .15s, color .15s; } }
+  .yk-panel[hidden] { display: none; }
+  table.board.yk-htable th, table.board.yk-htable td { text-align: left; white-space: normal; vertical-align: top; line-height: 1.6; }
+  table.board.yk-htable td:first-child, table.board.yk-htable th:first-child { white-space: nowrap; }
+  table.board.yk-htable td.empty { text-align: center; color: var(--muted); }
   .no-pending {
     background: var(--card);
     border: 1px dashed var(--border);
@@ -467,7 +478,7 @@
       </ul>
     </details>
     <div class="table-wrap" style="margin-bottom:14px"><table class="board" id="yakhom-table"></table></div>
-    <div class="yk-zone" id="yakhom-board"></div>
+    <div id="yakhom-board"></div>
   </section>
 
   <footer>บอร์ดแสดงผลอย่างเดียว — อัปเดตข้อมูล/ผลบอลโดยแก้ไขไฟล์ board-data.json</footer>
@@ -959,101 +970,82 @@ function renderYakhom() {
       '<td>' + (r.kcards > 0 ? '🪄 ×' + r.kcards : '-') + '</td></tr>'
     ).join('');
 
-  const paidHistory = YAKHOM_PAID.slice()
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map(e => '📅 ' + thaiDate(e.date) + (e.note ? ' <i>(' + esc(e.note) + ')</i>' : '') + ': ' +
-      Object.entries(e.payments).map(([n, c]) => esc(n) + ' ×' + c).join(', '))
-    .join('<br>');
-  const paidBlock = YAKHOM_PAID.length
-    ? '<div class="yk-title" style="margin-top:12px;color:var(--green)">✅ ประวัติใช้หนี้</div>' +
-      '<div class="yk-history">' + paidHistory + '</div>'
-    : '';
+  // ---------- ประวัติ: แยกเป็น sub-tab + ตาราง ----------
+  // จัดรูป {name:count} → "ชื่อ ×N, ..." (ละ ×1); ถ้าว่างคืน "-" สีจาง
+  const dash = '<span style="color:var(--muted)">-</span>';
+  const fmt = obj => {
+    const en = Object.entries(obj || {});
+    return en.length ? en.map(([n, c]) => esc(n) + (c > 1 ? ' ×' + c : '')).join(', ') : dash;
+  };
+  const emptyRow = (cols, msg) => '<tr><td class="empty" colspan="' + cols + '">' + msg + '</td></tr>';
+  const dateCell = dt => '📅 ' + thaiDate(dt);
 
-  const cardHistory = ANGEL.slice()
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map(a => {
-      const cnt = {};
-      a.names.forEach(n => { cnt[n] = (cnt[n] || 0) + 1; });
-      return '📅 ' + thaiDate(a.date) + ': ' +
-        Object.entries(cnt).map(([n, c]) => esc(n) + (c > 1 ? ' ×' + c : '')).join(', ');
-    })
-    .join('<br>');
-  const cardBlock = ANGEL.length
-    ? '<div class="yk-title" style="margin-top:12px">🃏 ประวัติได้บัตรนางฟ้า (ทายถูก 3/3)</div>' +
-      '<div class="yk-history">' + cardHistory + '</div>'
-    : '';
+  // 🍵 ยาขม: 1 แถวต่อวัน
+  const ykRows = YAKHOM.slice().sort((a, b) => b.date.localeCompare(a.date))
+    .map(y => '<tr><td>' + dateCell(y.date) + '</td><td>' + fmt(y.sachets) + '</td></tr>').join('');
+  const ykTable =
+    '<div class="table-wrap"><table class="board yk-htable">' +
+    '<tr><th>วันที่</th><th>คนที่โดน (ซอง)</th></tr>' +
+    (ykRows || emptyRow(2, 'ยังไม่มีใครโดนยาขม 🎉')) +
+    '</table></div>';
 
-  const cardUsedHistory = ANGEL_USED.slice()
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map(e => '📅 ' + thaiDate(e.date) + ': ' +
-      Object.entries(e.uses).map(([n, c]) => esc(n) + (c > 1 ? ' ×' + c : '')).join(', '))
-    .join('<br>');
-  const cardUsedBlock = ANGEL_USED.length
-    ? '<div class="yk-title" style="margin-top:12px">🃏 ประวัติการใช้บัตรนางฟ้า</div>' +
-      '<div class="yk-history">' + cardUsedHistory + '</div>'
-    : '';
+  // ✅ ใช้หนี้: 1 แถวต่อ entry (วันเดียวกันมีได้หลาย entry เช่น ยก + จ่ายจริง)
+  const paidRows = YAKHOM_PAID.slice().sort((a, b) => b.date.localeCompare(a.date))
+    .map(e => '<tr><td>' + dateCell(e.date) + '</td><td>' + fmt(e.payments) + '</td><td>' +
+      (e.note ? esc(e.note) : dash) + '</td></tr>').join('');
+  const paidTable =
+    '<div class="table-wrap"><table class="board yk-htable">' +
+    '<tr><th>วันที่</th><th>คนที่ใช้หนี้</th><th>หมายเหตุ</th></tr>' +
+    (paidRows || emptyRow(3, '— ยังไม่มี —')) +
+    '</table></div>';
 
-  const cardForfeitHistory = ANGEL_FORFEITED.slice()
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map(e => '📅 ' + thaiDate(e.date) + ': ' +
-      Object.entries(e.forfeits).map(([n, c]) => esc(n) + (c > 1 ? ' ×' + c : '')).join(', '))
-    .join('<br>');
-  const cardForfeitBlock = ANGEL_FORFEITED.length
-    ? '<div class="yk-title" style="margin-top:12px;color:var(--red)">🃏 ประวัติริบบัตรนางฟ้า</div>' +
-      '<div class="yk-history">' + cardForfeitHistory + '</div>'
-    : '';
-
-  const kpHistory = KHUNPHRA.slice()
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map(a => {
-      const cnt = {};
-      a.names.forEach(n => { cnt[n] = (cnt[n] || 0) + 1; });
-      return '📅 ' + thaiDate(a.date) + ': ' +
-        Object.entries(cnt).map(([n, c]) => esc(n) + (c > 1 ? ' ×' + c : '')).join(', ');
-    })
-    .join('<br>');
-  const kpBlock = KHUNPHRA.length
-    ? '<div class="yk-title" style="margin-top:12px">🪄 ประวัติได้บัตรคุณพระ (ใช้รอบ 32 ทีม)</div>' +
-      '<div class="yk-history">' + kpHistory + '</div>'
-    : '';
-
-  const kpUsedHistory = KHUNPHRA_USED.slice()
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map(e => '📅 ' + thaiDate(e.date) + ': ' +
-      Object.entries(e.uses).map(([n, c]) => esc(n) + (c > 1 ? ' ×' + c : '')).join(', '))
-    .join('<br>');
-  const kpUsedBlock = KHUNPHRA_USED.length
-    ? '<div class="yk-title" style="margin-top:12px">🪄 ประวัติการใช้บัตรคุณพระ</div>' +
-      '<div class="yk-history">' + kpUsedHistory + '</div>'
-    : '';
-
-  const kpForfeitHistory = KHUNPHRA_FORFEITED.slice()
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map(e => '📅 ' + thaiDate(e.date) + ': ' +
-      Object.entries(e.forfeits).map(([n, c]) => esc(n) + (c > 1 ? ' ×' + c : '')).join(', '))
-    .join('<br>');
-  const kpForfeitBlock = KHUNPHRA_FORFEITED.length
-    ? '<div class="yk-title" style="margin-top:12px;color:var(--red)">🪄 ประวัติริบบัตรคุณพระ</div>' +
-      '<div class="yk-history">' + kpForfeitHistory + '</div>'
-    : '';
-
-  const cardBlocks = cardBlock + cardUsedBlock + cardForfeitBlock + kpBlock + kpUsedBlock + kpForfeitBlock;
-
-  if (!YAKHOM.length) {
-    el.innerHTML = '<div class="yk-title">ยังไม่มีใครโดนยาขม 🎉</div>' +
-      '<div class="yk-history">รายชื่อจะขึ้นที่นี่เมื่อมีคนทายผิดทุกคู่ของวัน</div>' + paidBlock + cardBlocks;
-    return;
-  }
-
-  const history = YAKHOM.slice()
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map(y => '📅 ' + thaiDate(y.date) + ': ' +
-      Object.entries(y.sachets).map(([n, c]) => esc(n) + (c > 1 ? ' ×' + c : '')).join(', '))
-    .join('<br>');
+  // 🃏 / 🪄 ตารางบัตร: รวม ได้/ใช้/ริบ ไว้ 1 แถวต่อวัน (union วันจากทั้ง 3 log)
+  const cardTable = (earnedLog, usedLog, forfLog, head) => {
+    const byDate = {};
+    const slot = dt => (byDate[dt] = byDate[dt] || { e: {}, u: {}, f: {} });
+    earnedLog.forEach(a => { const t = slot(a.date).e; a.names.forEach(n => { t[n] = (t[n] || 0) + 1; }); });
+    usedLog.forEach(x => { const t = slot(x.date).u; Object.entries(x.uses).forEach(([n, c]) => { t[n] = (t[n] || 0) + c; }); });
+    forfLog.forEach(x => { const t = slot(x.date).f; Object.entries(x.forfeits).forEach(([n, c]) => { t[n] = (t[n] || 0) + c; }); });
+    const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+    const body = dates.length
+      ? dates.map(dt => '<tr><td>' + dateCell(dt) + '</td><td>' + fmt(byDate[dt].e) + '</td><td>' +
+          fmt(byDate[dt].u) + '</td><td>' + fmt(byDate[dt].f) + '</td></tr>').join('')
+      : emptyRow(4, '— ยังไม่มี —');
+    return '<div class="table-wrap"><table class="board yk-htable">' +
+      '<tr><th>วันที่</th><th>' + head + ' ได้รับ</th><th>ใช้</th><th>ริบ</th></tr>' + body + '</table></div>';
+  };
+  const angelTable = cardTable(ANGEL, ANGEL_USED, ANGEL_FORFEITED, '🃏');
+  const kpTable = cardTable(KHUNPHRA, KHUNPHRA_USED, KHUNPHRA_FORFEITED, '🪄');
 
   el.innerHTML =
-    '<div class="yk-title">🍵 ประวัติโดนยาขมรายวัน</div>' +
-    '<div class="yk-history">' + history + '</div>' + paidBlock + cardBlocks;
+    '<div class="yk-hist-title">📜 ประวัติ</div>' +
+    '<div class="yk-subtabs" role="tablist" aria-label="ประวัติยาขม">' +
+      '<button role="tab" aria-selected="true" data-yksub="yakhom">🍵 ยาขม</button>' +
+      '<button role="tab" aria-selected="false" data-yksub="paid">✅ ใช้หนี้</button>' +
+      '<button role="tab" aria-selected="false" data-yksub="angel">🃏 นางฟ้า</button>' +
+      '<button role="tab" aria-selected="false" data-yksub="kp">🪄 คุณพระ</button>' +
+    '</div>' +
+    '<div class="yk-panel active" data-ykpanel="yakhom">' + ykTable + '</div>' +
+    '<div class="yk-panel" data-ykpanel="paid" hidden>' + paidTable + '</div>' +
+    '<div class="yk-panel" data-ykpanel="angel" hidden>' + angelTable + '</div>' +
+    '<div class="yk-panel" data-ykpanel="kp" hidden>' + kpTable + '</div>';
+
+  // ผูก event sub-tab (คลิก + ลูกศรซ้าย/ขวา)
+  const subBtns = Array.prototype.slice.call(el.querySelectorAll('.yk-subtabs button'));
+  const subPanels = Array.prototype.slice.call(el.querySelectorAll('.yk-panel'));
+  const showSub = name => {
+    subBtns.forEach(b => b.setAttribute('aria-selected', String(b.dataset.yksub === name)));
+    subPanels.forEach(p => { const on = p.dataset.ykpanel === name; p.classList.toggle('active', on); p.hidden = !on; });
+  };
+  subBtns.forEach((b, i) => {
+    b.addEventListener('click', () => showSub(b.dataset.yksub));
+    b.addEventListener('keydown', ev => {
+      if (ev.key !== 'ArrowRight' && ev.key !== 'ArrowLeft') return;
+      ev.preventDefault();
+      const next = subBtns[(i + (ev.key === 'ArrowRight' ? 1 : subBtns.length - 1)) % subBtns.length];
+      showSub(next.dataset.yksub); next.focus();
+    });
+  });
 }
 
 // โซนเสี่ยงยาขม — นับเฉพาะคู่ของวันล่าสุด: ใครทายผิดทุกคู่ที่จบแล้วของวันนั้นจะติดโซน
