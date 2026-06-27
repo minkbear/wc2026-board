@@ -172,6 +172,8 @@
   .team-chip .chip-info { display: none; }
   .team-chip.open { display: inline-block; text-decoration: none; }
   .team-chip.open .chip-info { display: block; margin-top: 3px; font-size: .72rem; font-weight: 400; opacity: .9; text-decoration: none; white-space: normal; }
+  .big-rule { background: var(--purple-bg); border: 1px solid var(--border); border-left: 3px solid var(--purple); border-radius: var(--radius); padding: 10px 13px; margin-bottom: 12px; font-size: .84rem; line-height: 1.6; }
+  .big-rule b { color: var(--purple); }
   .standings-note { background: var(--card-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 12px; font-size: .85rem; line-height: 1.6; }
   .standings-note .legend { color: var(--muted); font-size: .76rem; }
   .standings-note .elim-list b { color: var(--red); }
@@ -417,6 +419,7 @@
 
   <!-- ============ ทายผลใหญ่ ============ -->
   <section id="sec-big" class="active" role="tabpanel" aria-labelledby="tab-big">
+    <div class="big-rule">🏆 <b>กติกาทายผลใหญ่</b> — เลือก <b>4 ทีม</b> ที่คิดว่าจะเข้า <b>รอบ 4 ทีมสุดท้าย</b> · ถ้าทีมที่เลือก <b>ตกรอบก่อนถึง 4 ทีมสุดท้าย</b> (ตกรอบไหนก็ได้) → <b>โดน 2 ซอง</b> ในวันที่ทีมนั้นตกรอบ</div>
     <div class="semis-banner" id="semis-banner"></div>
     <div class="standings-note" id="standings-note" hidden></div>
     <div class="view-toggle" role="group" aria-label="มุมมองทายผลใหญ่">
