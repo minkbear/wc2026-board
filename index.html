@@ -18,6 +18,7 @@
     --red: #f8615a;
     --red-bg: rgba(248,97,90,.12);
     --yellow: #e3b341;
+    --orange: #ff8a3d;
     --blue: #5cb3ff;
     --blue-bg: rgba(92,179,255,.12);
     --accent: #2f81f7;
@@ -185,6 +186,8 @@
     padding: 14px;
     margin-bottom: 14px;
   }
+  /* คู่ที่กำลังแข่ง (live) — ตีกรอบสีส้ม บอกว่าผลทายมาจากสกอร์สด ยังไม่จบ */
+  .match-card.live { border-color: var(--orange); box-shadow: 0 0 0 1px var(--orange), 0 0 16px rgba(255,138,61,.22); }
   .match-head { margin-bottom: 12px; }
   .match-head .title { font-size: 1rem; font-weight: 700; overflow-wrap: break-word; }
   .match-head .title .fav { color: var(--blue); }
@@ -805,7 +808,7 @@ document.getElementById('big-grid').addEventListener('keydown', e => {
 // ---------- ทายผลรายวัน ----------
 function dailyCard(m) {
     const s = resolveScore(m);
-    const result = (s && s.final) ? matchResult(m, s.favScore, s.dogScore) : null;
+    const result = s ? matchResult(m, s.favScore, s.dogScore) : null;   // คิดผลจากสกอร์ทั้งสด+จบ
     const isMargin = m.format === 'margin';
     const isScore = m.format === 'score';
     const isTotal = m.format === 'total';
@@ -835,8 +838,10 @@ function dailyCard(m) {
 
     let scoreHtml;
     if (s && s.live) {
+      const liveTag = (isMargin || isScore) ? ('ผลสด: ' + esc(result)) : (esc(m.fav) + ' "' + result + '" (สด)');
       scoreHtml = '<div class="score-line"><span class="final">' + s.favScore + ' - ' + s.dogScore + '</span>' +
-        '<span class="live-badge">LIVE' + (s.detail ? ' · ' + esc(s.detail) : '') + '</span></div>';
+        '<span class="live-badge">LIVE' + (s.detail ? ' · ' + esc(s.detail) : '') + '</span>' +
+        '<span class="result-tag">' + liveTag + '</span></div>';
     } else if (s && isTotal) {
       scoreHtml = '<div class="score-line"><span class="final">ผลรวม ' + s.favScore + ' ประตู</span>' +
         '<span class="result-tag">' + (m.bonusOnly ? 'ทายถูกได้ 🃏' : 'ทายผิดโดนยาขม') + '</span></div>';
@@ -848,7 +853,7 @@ function dailyCard(m) {
       scoreHtml = '<div class="score-line"><span class="waiting">⏳ รอผลบอล</span></div>';
     }
 
-    return '<div class="match-card">' +
+    return '<div class="match-card' + (s && s.live ? ' live' : '') + '">' +
       '<div class="match-head">' +
       '<div class="title">' + (isTotal ? esc(m.title) : '<span class="fav">' + esc(m.fav) + '</span> vs ' + esc(m.dog)) + '</div>' +
       (m.desc ? '<div class="match-desc">' + esc(m.desc) + '</div>' : '') +
