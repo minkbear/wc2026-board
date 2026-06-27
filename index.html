@@ -949,7 +949,12 @@ function renderYakhom() {
 
   const cardHistory = ANGEL.slice()
     .sort((a, b) => b.date.localeCompare(a.date))
-    .map(a => '📅 ' + thaiDate(a.date) + ': ' + a.names.map(esc).join(', '))
+    .map(a => {
+      const cnt = {};
+      a.names.forEach(n => { cnt[n] = (cnt[n] || 0) + 1; });
+      return '📅 ' + thaiDate(a.date) + ': ' +
+        Object.entries(cnt).map(([n, c]) => esc(n) + (c > 1 ? ' ×' + c : '')).join(', ');
+    })
     .join('<br>');
   const cardBlock = ANGEL.length
     ? '<div class="yk-title" style="margin-top:12px">🃏 ประวัติได้บัตรนางฟ้า (ทายถูก 3/3)</div>' +
