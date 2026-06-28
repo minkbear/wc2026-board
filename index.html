@@ -52,14 +52,14 @@
   /* ---- Tabs (segmented control) ---- */
   .tabs {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 4px;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 3px;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 4px;
     margin: 0 auto 18px;
-    max-width: 640px;
+    max-width: 680px;
     position: sticky;
     top: max(8px, env(safe-area-inset-top));
     z-index: 10;
@@ -71,11 +71,13 @@
     border-radius: 9px;
     background: transparent;
     color: var(--muted);
-    font-size: .86rem;
+    font-size: .76rem;
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
     touch-action: manipulation;
+    padding: 2px 1px;
+    line-height: 1.15;
   }
   .tabs button[aria-selected="true"] { background: var(--accent); color: #fff; }
   .tabs button:focus-visible,
@@ -275,6 +277,25 @@
   table.board.yk-htable th, table.board.yk-htable td { text-align: left; white-space: normal; vertical-align: top; line-height: 1.6; }
   table.board.yk-htable td:first-child, table.board.yk-htable th:first-child { white-space: nowrap; }
   table.board.yk-htable td.empty { text-align: center; color: var(--muted); }
+  /* ---- รอบ 32 ทีม (bracket) ---- */
+  .ko-legend { color: var(--muted); font-size: .78rem; margin-bottom: 12px; line-height: 1.5; }
+  .ko-cols { display: flex; flex-direction: column; gap: 18px; }
+  .ko-col { flex: 1; min-width: 0; }
+  .ko-half-title { font-size: .82rem; font-weight: 700; color: var(--blue); margin: 0 0 8px; }
+  .ko-list { display: flex; flex-direction: column; gap: 8px; }
+  .ko-match { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 4px 10px; }
+  .ko-side { display: flex; align-items: center; gap: 6px; padding: 5px 2px; font-size: .9rem; }
+  .ko-side + .ko-side { border-top: 1px dashed var(--border); }
+  .ko-name { flex: 1; min-width: 0; }
+  .ko-side.win .ko-name { font-weight: 700; color: var(--green); }
+  .ko-side.lose .ko-name { color: var(--muted); text-decoration: line-through; opacity: .8; }
+  .ko-placeholder { color: var(--muted); font-style: italic; }
+  .ko-star { font-size: .72rem; color: var(--yellow); font-weight: 700; white-space: nowrap; }
+  .ko-score { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 1.1em; text-align: right; color: var(--muted); }
+  .ko-side.win .ko-score { color: var(--green); }
+  @media (min-width: 720px) {
+    .ko-cols { flex-direction: row; gap: 24px; align-items: flex-start; }
+  }
   .no-pending {
     background: var(--card);
     border: 1px dashed var(--border);
@@ -422,11 +443,19 @@
   <p class="live-status" id="live-status" aria-live="polite"></p>
 
   <div class="tabs" role="tablist" aria-label="หมวดการทายผล">
+    <button id="tab-ko" role="tab" aria-selected="false" aria-controls="sec-ko">🏟️ 32 ทีม</button>
     <button id="tab-big" role="tab" aria-selected="true" aria-controls="sec-big">🏆 ทายผลใหญ่</button>
     <button id="tab-daily" role="tab" aria-selected="false" aria-controls="sec-daily">📅 รายวัน</button>
     <button id="tab-board" role="tab" aria-selected="false" aria-controls="sec-board">📊 คะแนน</button>
     <button id="tab-yakhom" role="tab" aria-selected="false" aria-controls="sec-yakhom">🍵 ยาขม</button>
   </div>
+
+  <!-- ============ รอบ 32 ทีม (bracket) ============ -->
+  <section id="sec-ko" role="tabpanel" aria-labelledby="tab-ko">
+    <h2 style="margin:0 0 4px">🏟️ รอบ 32 ทีม</h2>
+    <div class="ko-legend">⭐ = ทีมในโพยใหญ่ของกลุ่ม · ตัวเลขในดาว = มีกี่คนเลือกทีมนั้น</div>
+    <div id="ko-bracket"></div>
+  </section>
 
   <!-- ============ ทายผลใหญ่ ============ -->
   <section id="sec-big" class="active" role="tabpanel" aria-labelledby="tab-big">
@@ -480,7 +509,7 @@
 // ข้อมูลบอร์ดอยู่ใน board-data.json — แก้ข้อมูล/ผลที่ไฟล์นั้น
 // ============================================================
 
-let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [], YAKHOM = [], YAKHOM_PAID = [], ANGEL = [], ANGEL_USED = [], ANGEL_FORFEITED = [], KHUNPHRA = [], KHUNPHRA_USED = [], KHUNPHRA_FORFEITED = [];
+let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [], YAKHOM = [], YAKHOM_PAID = [], ANGEL = [], ANGEL_USED = [], ANGEL_FORFEITED = [], KHUNPHRA = [], KHUNPHRA_USED = [], KHUNPHRA_FORFEITED = [], KNOCKOUT = {};
 
 async function loadData() {
   const res = await fetch('./board-data.json', { cache: 'no-cache' });
@@ -498,6 +527,7 @@ async function loadData() {
   KHUNPHRA = d.khunphra || [];
   KHUNPHRA_USED = d.khunphraUsed || [];
   KHUNPHRA_FORFEITED = d.khunphraForfeited || [];
+  KNOCKOUT = d.knockout || {};
 }
 
 // ============================================================
@@ -683,7 +713,7 @@ function matchResult(m, favScore, dogScore) {
 }
 
 // ---------- Tabs ----------
-const TABS = ['big', 'daily', 'board', 'yakhom'];
+const TABS = ['ko', 'big', 'daily', 'board', 'yakhom'];
 
 function showTab(t, updateHash = true) {
   TABS.forEach(x => {
@@ -1127,6 +1157,40 @@ function renderBoard() {
     }).join('');
 }
 
+// รอบ 32 ทีม — bracket จากข้อมูล knockout.r32 (กรอกมือ) + ไฮไลต์ทีมในโพยใหญ่
+function renderKnockout() {
+  const el = document.getElementById('ko-bracket');
+  if (!el) return;
+  const ko = (KNOCKOUT && KNOCKOUT.r32) || [];
+  if (!ko.length) { el.innerHTML = '<div class="ko-legend">ยังไม่มีข้อมูลสายรอบ 32 ทีม</div>'; return; }
+
+  // นับว่าแต่ละทีมอยู่ในโพยใหญ่ของกี่คน
+  const bigCount = {};
+  Object.values(BIG_BETS).forEach(b => (b.teams || []).forEach(t => { bigCount[t] = (bigCount[t] || 0) + 1; }));
+
+  const sideHtml = (s, myScore, oppScore) => {
+    const nm = s.team || s.label || '?';
+    const isTeam = !!s.team;
+    let cls = 'ko-side';
+    if (myScore != null && oppScore != null) cls += myScore > oppScore ? ' win' : (myScore < oppScore ? ' lose' : '');
+    const star = (isTeam && bigCount[nm]) ? '<span class="ko-star">⭐×' + bigCount[nm] + '</span>' : '';
+    const nameCls = isTeam ? 'ko-name' : 'ko-name ko-placeholder';
+    const score = myScore != null ? myScore : '–';
+    return '<div class="' + cls + '"><span class="' + nameCls + '" translate="no">' + esc(nm) + '</span>' + star +
+      '<span class="ko-score">' + score + '</span></div>';
+  };
+  const matchHtml = m => '<div class="ko-match">' + sideHtml(m.home, m.homeScore, m.awayScore) + sideHtml(m.away, m.awayScore, m.homeScore) + '</div>';
+
+  let left = ko.filter(m => m.half === 'L'), right = ko.filter(m => m.half === 'R');
+  if (!left.length && !right.length) { const h = Math.ceil(ko.length / 2); left = ko.slice(0, h); right = ko.slice(h); }
+
+  el.innerHTML =
+    '<div class="ko-cols">' +
+      '<div class="ko-col"><div class="ko-half-title">⬅️ สายซ้าย</div><div class="ko-list">' + left.map(matchHtml).join('') + '</div></div>' +
+      '<div class="ko-col"><div class="ko-half-title">สายขวา ➡️</div><div class="ko-list">' + right.map(matchHtml).join('') + '</div></div>' +
+    '</div>';
+}
+
 (async () => {
   try {
     await loadData();
@@ -1136,6 +1200,7 @@ function renderBoard() {
     el.textContent = '⚠️ โหลดข้อมูลบอร์ดไม่สำเร็จ — ลองรีเฟรชหน้า (ถ้าเปิดไฟล์ตรงๆ ให้เปิดผ่านเว็บแทน)';
     return;
   }
+  renderKnockout();
   renderBig();
   renderDaily();
   renderBoard();
