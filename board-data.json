@@ -16,22 +16,22 @@
   "semisActual": [],
   "knockout": {
     "r32": [
-      { "id": 73, "half": "L", "home": { "team": "เยอรมนี" }, "away": { "team": "ปารากวัย" }, "homeScore": null, "awayScore": null },
-      { "id": 74, "half": "L", "home": { "team": "ฝรั่งเศส" }, "away": { "team": "สวีเดน" }, "homeScore": null, "awayScore": null },
-      { "id": 75, "half": "L", "home": { "team": "แอฟริกาใต้" }, "away": { "team": "แคนาดา" }, "homeScore": null, "awayScore": null },
-      { "id": 76, "half": "L", "home": { "team": "เนเธอร์แลนด์" }, "away": { "team": "โมร็อกโก" }, "homeScore": null, "awayScore": null },
-      { "id": 77, "half": "L", "home": { "team": "โปรตุเกส" }, "away": { "team": "โครเอเชีย" }, "homeScore": null, "awayScore": null },
-      { "id": 78, "half": "L", "home": { "team": "สเปน" }, "away": { "team": "ออสเตรีย" }, "homeScore": null, "awayScore": null },
-      { "id": 79, "half": "L", "home": { "team": "สหรัฐอเมริกา" }, "away": { "team": "บอสเนีย" }, "homeScore": null, "awayScore": null },
-      { "id": 80, "half": "L", "home": { "team": "เบลเยียม" }, "away": { "team": "เซเนกัล" }, "homeScore": null, "awayScore": null },
-      { "id": 81, "half": "R", "home": { "team": "บราซิล" }, "away": { "team": "ญี่ปุ่น" }, "homeScore": null, "awayScore": null },
-      { "id": 82, "half": "R", "home": { "team": "ไอวอรีโคสต์" }, "away": { "team": "นอร์เวย์" }, "homeScore": null, "awayScore": null },
-      { "id": 83, "half": "R", "home": { "team": "เม็กซิโก" }, "away": { "team": "เอกวาดอร์" }, "homeScore": null, "awayScore": null },
-      { "id": 84, "half": "R", "home": { "team": "อังกฤษ" }, "away": { "team": "คองโก" }, "homeScore": null, "awayScore": null },
-      { "id": 85, "half": "R", "home": { "team": "อาร์เจนตินา" }, "away": { "team": "เคปเวิร์ด" }, "homeScore": null, "awayScore": null },
-      { "id": 86, "half": "R", "home": { "team": "ออสเตรเลีย" }, "away": { "team": "อียิปต์" }, "homeScore": null, "awayScore": null },
-      { "id": 87, "half": "R", "home": { "team": "สวิตเซอร์แลนด์" }, "away": { "team": "แอลจีเรีย" }, "homeScore": null, "awayScore": null },
-      { "id": 88, "half": "R", "home": { "team": "โคลอมเบีย" }, "away": { "team": "กานา" }, "homeScore": null, "awayScore": null }
+      { "id": 73, "half": "L", "datetime": "2026-06-29T20:30:00Z", "home": { "team": "เยอรมนี" }, "away": { "team": "ปารากวัย" }, "homeScore": null, "awayScore": null },
+      { "id": 74, "half": "L", "datetime": "2026-06-30T21:00:00Z", "home": { "team": "ฝรั่งเศส" }, "away": { "team": "สวีเดน" }, "homeScore": null, "awayScore": null },
+      { "id": 75, "half": "L", "datetime": "2026-06-28T19:00:00Z", "home": { "team": "แอฟริกาใต้" }, "away": { "team": "แคนาดา" }, "homeScore": null, "awayScore": null },
+      { "id": 76, "half": "L", "datetime": "2026-06-30T01:00:00Z", "home": { "team": "เนเธอร์แลนด์" }, "away": { "team": "โมร็อกโก" }, "homeScore": null, "awayScore": null },
+      { "id": 77, "half": "L", "datetime": "2026-07-02T23:00:00Z", "home": { "team": "โปรตุเกส" }, "away": { "team": "โครเอเชีย" }, "homeScore": null, "awayScore": null },
+      { "id": 78, "half": "L", "datetime": "2026-07-02T19:00:00Z", "home": { "team": "สเปน" }, "away": { "team": "ออสเตรีย" }, "homeScore": null, "awayScore": null },
+      { "id": 79, "half": "L", "datetime": "2026-07-02T00:00:00Z", "home": { "team": "สหรัฐอเมริกา" }, "away": { "team": "บอสเนีย" }, "homeScore": null, "awayScore": null },
+      { "id": 80, "half": "L", "datetime": "2026-07-01T20:00:00Z", "home": { "team": "เบลเยียม" }, "away": { "team": "เซเนกัล" }, "homeScore": null, "awayScore": null },
+      { "id": 81, "half": "R", "datetime": "2026-06-29T17:00:00Z", "home": { "team": "บราซิล" }, "away": { "team": "ญี่ปุ่น" }, "homeScore": null, "awayScore": null },
+      { "id": 82, "half": "R", "datetime": "2026-06-30T17:00:00Z", "home": { "team": "ไอวอรีโคสต์" }, "away": { "team": "นอร์เวย์" }, "homeScore": null, "awayScore": null },
+      { "id": 83, "half": "R", "datetime": "2026-07-01T01:00:00Z", "home": { "team": "เม็กซิโก" }, "away": { "team": "เอกวาดอร์" }, "homeScore": null, "awayScore": null },
+      { "id": 84, "half": "R", "datetime": "2026-07-01T16:00:00Z", "home": { "team": "อังกฤษ" }, "away": { "team": "คองโก" }, "homeScore": null, "awayScore": null },
+      { "id": 85, "half": "R", "datetime": "2026-07-03T22:00:00Z", "home": { "team": "อาร์เจนตินา" }, "away": { "team": "เคปเวิร์ด" }, "homeScore": null, "awayScore": null },
+      { "id": 86, "half": "R", "datetime": "2026-07-03T18:00:00Z", "home": { "team": "ออสเตรเลีย" }, "away": { "team": "อียิปต์" }, "homeScore": null, "awayScore": null },
+      { "id": 87, "half": "R", "datetime": "2026-07-03T03:00:00Z", "home": { "team": "สวิตเซอร์แลนด์" }, "away": { "team": "แอลจีเรีย" }, "homeScore": null, "awayScore": null },
+      { "id": 88, "half": "R", "datetime": "2026-07-04T01:30:00Z", "home": { "team": "โคลอมเบีย" }, "away": { "team": "กานา" }, "homeScore": null, "awayScore": null }
     ]
   },
   "yakhom": [

@@ -277,14 +277,16 @@
   table.board.yk-htable th, table.board.yk-htable td { text-align: left; white-space: normal; vertical-align: top; line-height: 1.6; }
   table.board.yk-htable td:first-child, table.board.yk-htable th:first-child { white-space: nowrap; }
   table.board.yk-htable td.empty { text-align: center; color: var(--muted); }
-  /* ---- รอบ 32 ทีม (bracket) ---- */
+  /* ---- รอบ 32 ทีม (ตารางแข่ง เรียงตามวันเวลา) ---- */
   .ko-legend { color: var(--muted); font-size: .78rem; margin-bottom: 12px; line-height: 1.5; }
-  .ko-cols { display: flex; flex-direction: column; gap: 18px; }
-  .ko-col { flex: 1; min-width: 0; }
-  .ko-half-title { font-size: .82rem; font-weight: 700; color: var(--blue); margin: 0 0 8px; }
+  #ko-bracket { max-width: 560px; margin: 0 auto; }
+  .ko-day-title { font-size: .85rem; font-weight: 700; color: var(--blue); margin: 16px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .ko-day-title:first-child { margin-top: 0; }
   .ko-list { display: flex; flex-direction: column; gap: 8px; }
   .ko-match { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 4px 10px; }
+  .ko-when { font-size: .74rem; color: var(--muted); font-weight: 600; padding: 4px 2px 2px; font-variant-numeric: tabular-nums; }
   .ko-side { display: flex; align-items: center; gap: 6px; padding: 5px 2px; font-size: .9rem; }
+  .ko-when + .ko-side { border-top: 1px dashed var(--border); }
   .ko-side + .ko-side { border-top: 1px dashed var(--border); }
   .ko-name { flex: 1; min-width: 0; }
   .ko-side.win .ko-name { font-weight: 700; color: var(--green); }
@@ -293,9 +295,6 @@
   .ko-star { font-size: .72rem; color: var(--yellow); font-weight: 700; white-space: nowrap; }
   .ko-score { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 1.1em; text-align: right; color: var(--muted); }
   .ko-side.win .ko-score { color: var(--green); }
-  @media (min-width: 720px) {
-    .ko-cols { flex-direction: row; gap: 24px; align-items: flex-start; }
-  }
   .no-pending {
     background: var(--card);
     border: 1px dashed var(--border);
@@ -1161,12 +1160,18 @@ function renderBoard() {
 function renderKnockout() {
   const el = document.getElementById('ko-bracket');
   if (!el) return;
-  const ko = (KNOCKOUT && KNOCKOUT.r32) || [];
+  const ko = ((KNOCKOUT && KNOCKOUT.r32) || []).slice();
   if (!ko.length) { el.innerHTML = '<div class="ko-legend">ยังไม่มีข้อมูลสายรอบ 32 ทีม</div>'; return; }
 
   // นับว่าแต่ละทีมอยู่ในโพยใหญ่ของกี่คน
   const bigCount = {};
   Object.values(BIG_BETS).forEach(b => (b.teams || []).forEach(t => { bigCount[t] = (bigCount[t] || 0) + 1; }));
+
+  // เวลาไทย (Asia/Bangkok)
+  const TZ = { timeZone: 'Asia/Bangkok' };
+  const koTime = iso => new Intl.DateTimeFormat('th-TH', { ...TZ, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso));
+  const koDayKey = iso => new Intl.DateTimeFormat('en-CA', { ...TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso));
+  const koDayLabel = iso => new Intl.DateTimeFormat('th-TH', { ...TZ, weekday: 'long', day: 'numeric', month: 'short' }).format(new Date(iso));
 
   const sideHtml = (s, myScore, oppScore) => {
     const nm = s.team || s.label || '?';
@@ -1179,16 +1184,24 @@ function renderKnockout() {
     return '<div class="' + cls + '"><span class="' + nameCls + '" translate="no">' + esc(nm) + '</span>' + star +
       '<span class="ko-score">' + score + '</span></div>';
   };
-  const matchHtml = m => '<div class="ko-match">' + sideHtml(m.home, m.homeScore, m.awayScore) + sideHtml(m.away, m.awayScore, m.homeScore) + '</div>';
+  const matchHtml = m => '<div class="ko-match">' +
+    (m.datetime ? '<div class="ko-when">⏰ ' + koTime(m.datetime) + ' น.</div>' : '') +
+    sideHtml(m.home, m.homeScore, m.awayScore) + sideHtml(m.away, m.awayScore, m.homeScore) + '</div>';
 
-  let left = ko.filter(m => m.half === 'L'), right = ko.filter(m => m.half === 'R');
-  if (!left.length && !right.length) { const h = Math.ceil(ko.length / 2); left = ko.slice(0, h); right = ko.slice(h); }
-
-  el.innerHTML =
-    '<div class="ko-cols">' +
-      '<div class="ko-col"><div class="ko-half-title">⬅️ สายซ้าย</div><div class="ko-list">' + left.map(matchHtml).join('') + '</div></div>' +
-      '<div class="ko-col"><div class="ko-half-title">สายขวา ➡️</div><div class="ko-list">' + right.map(matchHtml).join('') + '</div></div>' +
-    '</div>';
+  // เรียงตามวันเวลา (คู่ที่ยังไม่มีกำหนดไปท้าย) แล้วจัดกลุ่มตามวัน (เวลาไทย)
+  ko.sort((a, b) => (a.datetime || '9').localeCompare(b.datetime || '9'));
+  let html = '', curDay = null;
+  ko.forEach(m => {
+    const key = m.datetime ? koDayKey(m.datetime) : 'tbd';
+    if (key !== curDay) {
+      if (curDay !== null) html += '</div>';
+      html += '<div class="ko-day-title">📅 ' + (m.datetime ? koDayLabel(m.datetime) : 'ยังไม่มีกำหนด') + '</div><div class="ko-list">';
+      curDay = key;
+    }
+    html += matchHtml(m);
+  });
+  if (curDay !== null) html += '</div>';
+  el.innerHTML = html;
 }
 
 (async () => {
