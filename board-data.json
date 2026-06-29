@@ -18,7 +18,7 @@
     "r32": [
       { "id": 73, "half": "L", "datetime": "2026-06-29T20:30:00Z", "home": { "team": "เยอรมนี" }, "away": { "team": "ปารากวัย" }, "homeScore": null, "awayScore": null },
       { "id": 74, "half": "L", "datetime": "2026-06-30T21:00:00Z", "home": { "team": "ฝรั่งเศส" }, "away": { "team": "สวีเดน" }, "homeScore": null, "awayScore": null },
-      { "id": 75, "half": "L", "datetime": "2026-06-28T19:00:00Z", "home": { "team": "แอฟริกาใต้" }, "away": { "team": "แคนาดา" }, "homeScore": null, "awayScore": null },
+      { "id": 75, "half": "L", "datetime": "2026-06-28T19:00:00Z", "home": { "team": "แอฟริกาใต้" }, "away": { "team": "แคนาดา" }, "homeScore": 0, "awayScore": 1 },
       { "id": 76, "half": "L", "datetime": "2026-06-30T01:00:00Z", "home": { "team": "เนเธอร์แลนด์" }, "away": { "team": "โมร็อกโก" }, "homeScore": null, "awayScore": null },
       { "id": 77, "half": "L", "datetime": "2026-07-02T23:00:00Z", "home": { "team": "โปรตุเกส" }, "away": { "team": "โครเอเชีย" }, "homeScore": null, "awayScore": null },
       { "id": 78, "half": "L", "datetime": "2026-07-02T19:00:00Z", "home": { "team": "สเปน" }, "away": { "team": "ออสเตรีย" }, "homeScore": null, "awayScore": null },
