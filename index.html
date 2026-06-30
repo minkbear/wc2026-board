@@ -280,6 +280,8 @@
   /* ---- รอบ 32 ทีม (ตารางแข่ง เรียงตามวันเวลา) ---- */
   .ko-legend { color: var(--muted); font-size: .78rem; margin-bottom: 12px; line-height: 1.5; }
   #ko-bracket { max-width: 560px; margin: 0 auto; }
+  .ko-round-title { font-size: 1rem; font-weight: 800; color: var(--text); margin: 22px 0 6px; padding: 6px 0; border-bottom: 2px solid var(--accent); }
+  .ko-round-title:first-child { margin-top: 0; }
   .ko-day-title { font-size: .85rem; font-weight: 700; color: var(--blue); margin: 16px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
   .ko-day-title:first-child { margin-top: 0; }
   .ko-list { display: flex; flex-direction: column; gap: 8px; }
@@ -1160,8 +1162,7 @@ function renderBoard() {
 function renderKnockout() {
   const el = document.getElementById('ko-bracket');
   if (!el) return;
-  const ko = ((KNOCKOUT && KNOCKOUT.r32) || []).slice();
-  if (!ko.length) { el.innerHTML = '<div class="ko-legend">ยังไม่มีข้อมูลสายรอบ 32 ทีม</div>'; return; }
+  const ko = KNOCKOUT || {};
 
   // นับว่าแต่ละทีมอยู่ในโพยใหญ่ของกี่คน
   const bigCount = {};
@@ -1198,20 +1199,23 @@ function renderKnockout() {
       sideHtml(m.home, m.homeScore, hRes) + sideHtml(m.away, m.awayScore, aRes) + pens + '</div>';
   };
 
-  // เรียงตามวันเวลา (คู่ที่ยังไม่มีกำหนดไปท้าย) แล้วจัดกลุ่มตามวัน (เวลาไทย)
-  ko.sort((a, b) => (a.datetime || '9').localeCompare(b.datetime || '9'));
-  let html = '', curDay = null;
-  ko.forEach(m => {
-    const key = m.datetime ? koDayKey(m.datetime) : 'tbd';
-    if (key !== curDay) {
-      if (curDay !== null) html += '</div>';
-      html += '<div class="ko-day-title">📅 ' + (m.datetime ? koDayLabel(m.datetime) : 'ยังไม่มีกำหนด') + '</div><div class="ko-list">';
-      curDay = key;
-    }
-    html += matchHtml(m);
-  });
-  if (curDay !== null) html += '</div>';
-  el.innerHTML = html;
+  // render รอบนึง: เรียงตามวันเวลา (คู่ที่ยังไม่มีกำหนดไปท้าย) จัดกลุ่มตามวัน (เวลาไทย)
+  const renderRound = (matches, title) => {
+    if (!matches || !matches.length) return '';
+    let html = '<div class="ko-round-title">' + title + '</div>', curDay = null;
+    matches.slice().sort((a, b) => (a.datetime || '9').localeCompare(b.datetime || '9')).forEach(m => {
+      const key = m.datetime ? koDayKey(m.datetime) : 'tbd';
+      if (key !== curDay) {
+        if (curDay !== null) html += '</div>';
+        html += '<div class="ko-day-title">📅 ' + (m.datetime ? koDayLabel(m.datetime) : 'ยังไม่มีกำหนด') + '</div><div class="ko-list">';
+        curDay = key;
+      }
+      html += matchHtml(m);
+    });
+    return html + '</div>';
+  };
+  const out = renderRound(ko.r32, '🏟️ รอบ 32 ทีม') + renderRound(ko.r16, '⚔️ รอบ 16 ทีม');
+  el.innerHTML = out || '<div class="ko-legend">ยังไม่มีข้อมูลสายน็อกเอาต์</div>';
 }
 
 (async () => {
