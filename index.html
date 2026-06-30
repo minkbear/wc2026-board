@@ -996,18 +996,19 @@ function renderYakhom() {
   const kpForfeited = {};
   KHUNPHRA_FORFEITED.forEach(e => Object.entries(e.forfeits).forEach(([n, c]) => { kpForfeited[n] = (kpForfeited[n] || 0) + c; }));
 
-  // ตารางสรุปต่อคน: โดนยาขม / ใช้หนี้แล้ว / คงเหลือ / บัตรนางฟ้า / บัตรคุณพระ — เรียงคงเหลือมากสุดก่อน
-  // บัตรนางฟ้าที่ใช้ (ANGEL_USED) = ผ่านยาขม ล้างหนี้ใบละ 1 ซอง จึงนับรวมกับเงินสดในการล้างหนี้
-  // บัตรคุณพระใช้ได้เฉพาะรอบ 32 ทีม — ตอนนี้แค่ถือไว้ ไม่นำมาล้างหนี้รอบกลุ่ม
+  // ตารางสรุปต่อคน: โดนยาขม / ใช้หนี้แล้ว / คงเหลือ / บัตรคุณพระ — เรียงคงเหลือมากสุดก่อน
+  // บัตรที่ใช้ (นางฟ้า ANGEL_USED รอบกลุ่ม + คุณพระ KHUNPHRA_USED รอบ 32) ผ่านยาขมล้างหนี้ใบละ 1 ซอง
+  // จึงนับรวมกับเงินสด; การริบไม่ล้างหนี้
   const rows = PEOPLE.slice()
     .map(p => {
       const got = counts[p] || 0;
-      const paid = Math.min(paidTotals[p] || 0, got);
-      const used = cardUsed[p] || 0;
-      const cleared = Math.min(paid + used, got);   // ริบไม่ล้างหนี้ — คิดเฉพาะเงินสด + บัตรที่ใช้
+      const paid = paidTotals[p] || 0;
+      const used = cardUsed[p] || 0;       // บัตรนางฟ้าที่ใช้ (รอบกลุ่ม)
+      const kused = kpUsed[p] || 0;        // บัตรคุณพระที่ใช้ (รอบ 32)
+      const cleared = Math.min(paid + used + kused, got);
       const cards = Math.max((cardEarned[p] || 0) - used - (cardForfeited[p] || 0), 0);
-      const kcards = Math.max((kpEarned[p] || 0) - (kpUsed[p] || 0) - (kpForfeited[p] || 0), 0);
-      return { p, got, paid, used, owe: got - cleared, cards, kcards };
+      const kcards = Math.max((kpEarned[p] || 0) - kused - (kpForfeited[p] || 0), 0);
+      return { p, got, paid, used, kused, owe: got - cleared, cards, kcards };
     })
     .sort((a, b) => b.owe - a.owe || b.got - a.got || b.cards - a.cards || b.kcards - a.kcards || a.p.localeCompare(b.p, 'th'));
   const maxOwe = rows.length ? rows[0].owe : 0;
@@ -1017,8 +1018,8 @@ function renderYakhom() {
       '<tr' + (r.owe > 0 && r.owe === maxOwe ? ' class="top-yk"' : (r.got > 0 && r.owe === 0 ? ' class="paid-yk"' : '')) +
       '><td translate="no">' + (r.owe > 0 ? '🍵 ' : (r.got > 0 ? '✅ ' : '')) + esc(r.p) + '</td>' +
       '<td>' + (r.got > 0 ? '×' + r.got : '-') + '</td>' +
-      '<td>' + (r.paid > 0 || r.used > 0
-        ? [r.paid > 0 ? '×' + r.paid : null, r.used > 0 ? '🃏×' + r.used : null].filter(Boolean).join(' ')
+      '<td>' + (r.paid > 0 || r.used > 0 || r.kused > 0
+        ? [r.paid > 0 ? '×' + r.paid : null, r.used > 0 ? '🃏×' + r.used : null, r.kused > 0 ? '🪄×' + r.kused : null].filter(Boolean).join(' ')
         : '-') + '</td>' +
       '<td>' + (r.owe > 0 ? '×' + r.owe : (r.got > 0 ? 'ครบ' : '-')) + '</td>' +
       '<td>' + (r.kcards > 0 ? '🪄 ×' + r.kcards : '-') + '</td></tr>'
