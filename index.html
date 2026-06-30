@@ -517,7 +517,7 @@
 // ข้อมูลบอร์ดอยู่ใน board-data.json — แก้ข้อมูล/ผลที่ไฟล์นั้น
 // ============================================================
 
-let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [], YAKHOM = [], YAKHOM_PAID = [], ANGEL = [], ANGEL_USED = [], ANGEL_FORFEITED = [], KHUNPHRA = [], KHUNPHRA_USED = [], KHUNPHRA_FORFEITED = [], KNOCKOUT = {};
+let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [], YAKHOM = [], YAKHOM_PAID = [], ANGEL = [], ANGEL_USED = [], ANGEL_FORFEITED = [], KHUNPHRA = [], KHUNPHRA_USED = [], KHUNPHRA_FORFEITED = [], KNOCKOUT = {}, KO_ELIM = {};
 
 async function loadData() {
   const res = await fetch('./board-data.json', { cache: 'no-cache' });
@@ -536,6 +536,22 @@ async function loadData() {
   KHUNPHRA_USED = d.khunphraUsed || [];
   KHUNPHRA_FORFEITED = d.khunphraForfeited || [];
   KNOCKOUT = d.knockout || {};
+  KO_ELIM = knockoutElim();
+}
+
+// ทีมที่ตกรอบในน็อกเอาต์ (แพ้คู่ที่จบแล้ว) -> ป้ายรอบที่ตก เช่น "ตกรอบ 32 ทีม"
+function knockoutElim() {
+  const ROUND_OUT = { r32: 'ตกรอบ 32 ทีม', r16: 'ตกรอบ 16 ทีม', qf: 'ตกรอบ 8 ทีม', sf: 'ตกรอบ 4 ทีม' };
+  const out = {};
+  for (const rk of Object.keys(ROUND_OUT)) {
+    for (const m of (KNOCKOUT[rk] || [])) {
+      if (m.homeScore == null || m.awayScore == null) continue;
+      const homeWin = m.homeScore !== m.awayScore ? m.homeScore > m.awayScore : (m.winner === 'home');
+      const loser = homeWin ? m.away : m.home;
+      if (loser && loser.team) out[loser.team] = ROUND_OUT[rk];
+    }
+  }
+  return out;
 }
 
 // ============================================================
@@ -760,8 +776,13 @@ const STATUS_ICON = { eliminated: ' ❌', advanced: ' ✅', best8: ' ⏳' };
 function teamChip(t) {
   let cls = teamChipClass(t);
   const s = STANDINGS[t];
+  const koOut = KO_ELIM[t];   // ป้ายรอบที่ตก ถ้าตกในน็อกเอาต์
   let badge = '', info = '';
-  if (s) {
+  if (koOut) {
+    if (!SEMIS_ACTUAL.length) cls += ' elim';
+    badge = ' ❌';
+    info = koOut + (s ? ' · กลุ่ม ' + s.group : '');
+  } else if (s) {
     if (!SEMIS_ACTUAL.length && s.status === 'eliminated') cls += ' elim';
     if (!SEMIS_ACTUAL.length && s.status === 'best8') cls += ' best8';
     badge = STATUS_ICON[s.status] || '';
@@ -822,22 +843,27 @@ function renderBig() {
 // สรุปรอบแบ่งกลุ่ม: ทีมในโพยใหญ่ที่ "ตกรอบแล้ว" (จาก ESPN) — โพยใหญ่คือทายเข้ารอบรองฯ
 function renderStandingsNote() {
   const el = document.getElementById('standings-note');
-  if (!Object.keys(STANDINGS).length) { el.hidden = true; return; }
+  if (!Object.keys(STANDINGS).length && !Object.keys(KO_ELIM).length) { el.hidden = true; return; }
   const betTeams = [...new Set(PEOPLE.flatMap(p => (BIG_BETS[p] || {}).teams || []))];
-  const order = { eliminated: 0, best8: 1, advanced: 2, other: 3 };
-  const elim = betTeams.filter(t => STANDINGS[t] && STANDINGS[t].status === 'eliminated')
+  const koElim = betTeams.filter(t => KO_ELIM[t]).sort((a, b) => a.localeCompare(b, 'th'));
+  const elim = betTeams.filter(t => !KO_ELIM[t] && STANDINGS[t] && STANDINGS[t].status === 'eliminated')
     .sort((a, b) => a.localeCompare(b, 'th'));
-  const best8 = betTeams.filter(t => STANDINGS[t] && STANDINGS[t].status === 'best8')
+  const best8 = betTeams.filter(t => !KO_ELIM[t] && STANDINGS[t] && STANDINGS[t].status === 'best8')
     .sort((a, b) => a.localeCompare(b, 'th'));
   el.hidden = false;
   el.innerHTML =
-    '<div>📊 <b>รอบแบ่งกลุ่ม (สดจาก ESPN)</b></div>' +
+    '<div>📊 <b>สถานะทีมในโพยใหญ่</b></div>' +
+    (koElim.length
+      ? '<div class="elim-list">❌ ตกรอบน็อกเอาต์แล้ว: ' +
+          koElim.map(t => esc(t) + ' <span class="legend">(' + esc(KO_ELIM[t]) + ')</span>').join(' · ') + '</div>'
+      : '') +
     (elim.length
-      ? '<div class="elim-list">❌ ทีมในโพยใหญ่ที่<b>ตกรอบแล้ว</b>: ' +
+      ? '<div class="elim-list">❌ ตกรอบแบ่งกลุ่ม: ' +
           elim.map(t => esc(t) + ' <span class="legend">(กลุ่ม ' + esc(STANDINGS[t].group) + ', ' + esc(STANDINGS[t].pts) + ' แต้ม)</span>').join(' · ') + '</div>'
-      : '<div>✅ ทีมในโพยใหญ่ยังไม่มีใครตกรอบ</div>') +
+      : '') +
+    (!koElim.length && !elim.length ? '<div>✅ ทีมในโพยใหญ่ยังไม่มีใครตกรอบ</div>' : '') +
     (best8.length ? '<div>⏳ ที่ลุ้น (ที่ 3 ชิง 8 ทีมดีสุด): ' + best8.map(esc).join(' · ') + '</div>' : '') +
-    '<div class="legend">หมายเหตุ: ✅ เข้ารอบ 32 · ⏳ ที่ 3 ลุ้น · ❌ ตกรอบ — แตะ/คลิกที่ทีมเพื่อดูแต้ม/นัด (ทายผลใหญ่ = ทายทีมเข้ารอบรองฯ การตกรอบนี้ตัดสิทธิ์ลุ้นไปแล้ว)</div>';
+    '<div class="legend">หมายเหตุ: ✅ เข้ารอบ · ⏳ ที่ 3 ลุ้น · ❌ ตกรอบ — แตะ/คลิกที่ทีมเพื่อดูรายละเอียด (ทายผลใหญ่ = ทายทีมเข้ารอบรองฯ การตกรอบตัดสิทธิ์ลุ้นไปแล้ว)</div>';
 }
 
 document.getElementById('vt-person').addEventListener('click', () => { bigView = 'person'; renderBig(); });
