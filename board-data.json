@@ -16,7 +16,7 @@
   "semisActual": [],
   "knockout": {
     "r32": [
-      { "id": 73, "half": "L", "datetime": "2026-06-29T20:30:00Z", "home": { "team": "เยอรมนี" }, "away": { "team": "ปารากวัย" }, "homeScore": null, "awayScore": null },
+      { "id": 73, "half": "L", "datetime": "2026-06-29T20:30:00Z", "home": { "team": "เยอรมนี" }, "away": { "team": "ปารากวัย" }, "homeScore": 1, "awayScore": 1, "winner": "away", "pens": { "home": 3, "away": 4 } },
       { "id": 74, "half": "L", "datetime": "2026-06-30T21:00:00Z", "home": { "team": "ฝรั่งเศส" }, "away": { "team": "สวีเดน" }, "homeScore": null, "awayScore": null },
       { "id": 75, "half": "L", "datetime": "2026-06-28T19:00:00Z", "home": { "team": "แอฟริกาใต้" }, "away": { "team": "แคนาดา" }, "homeScore": 0, "awayScore": 1 },
       { "id": 76, "half": "L", "datetime": "2026-06-30T01:00:00Z", "home": { "team": "เนเธอร์แลนด์" }, "away": { "team": "โมร็อกโก" }, "homeScore": null, "awayScore": null },
@@ -24,7 +24,7 @@
       { "id": 78, "half": "L", "datetime": "2026-07-02T19:00:00Z", "home": { "team": "สเปน" }, "away": { "team": "ออสเตรีย" }, "homeScore": null, "awayScore": null },
       { "id": 79, "half": "L", "datetime": "2026-07-02T00:00:00Z", "home": { "team": "สหรัฐอเมริกา" }, "away": { "team": "บอสเนีย" }, "homeScore": null, "awayScore": null },
       { "id": 80, "half": "L", "datetime": "2026-07-01T20:00:00Z", "home": { "team": "เบลเยียม" }, "away": { "team": "เซเนกัล" }, "homeScore": null, "awayScore": null },
-      { "id": 81, "half": "R", "datetime": "2026-06-29T17:00:00Z", "home": { "team": "บราซิล" }, "away": { "team": "ญี่ปุ่น" }, "homeScore": null, "awayScore": null },
+      { "id": 81, "half": "R", "datetime": "2026-06-29T17:00:00Z", "home": { "team": "บราซิล" }, "away": { "team": "ญี่ปุ่น" }, "homeScore": 2, "awayScore": 1 },
       { "id": 82, "half": "R", "datetime": "2026-06-30T17:00:00Z", "home": { "team": "ไอวอรีโคสต์" }, "away": { "team": "นอร์เวย์" }, "homeScore": null, "awayScore": null },
       { "id": 83, "half": "R", "datetime": "2026-07-01T01:00:00Z", "home": { "team": "เม็กซิโก" }, "away": { "team": "เอกวาดอร์" }, "homeScore": null, "awayScore": null },
       { "id": 84, "half": "R", "datetime": "2026-07-01T16:00:00Z", "home": { "team": "อังกฤษ" }, "away": { "team": "คองโก" }, "homeScore": null, "awayScore": null },
@@ -463,7 +463,7 @@
     {
       "id": 39, "date": "2026-06-29", "fav": "บราซิล", "dog": "ญี่ปุ่น", "hcp": 1,
       "desc": "ทายชุด 2 คู่ (คู่นี้ + เยอรมนี–ปารากวัย) · ผิดทั้ง 2 คู่ → 1 ซอง · ถูก 1 คู่ → รอด · ถูก 2 คู่ → เก่งจัง! (ไม่มีบัตรแจก)",
-      "favScore": null, "dogScore": null,
+      "favScore": 2, "dogScore": 1,
       "picks": {
         "ชนะ":  [{ "name": "คุณศักดิ์" }, { "name": "วรุตม์" }, { "name": "ตี๋" }],
         "เสมอ": [{ "name": "ชญานิน (1st)" }, { "name": "ปอง" }, { "name": "คุณเปิ๊ด" }, { "name": "พี่กอล์ฟ" }],
@@ -473,7 +473,7 @@
     {
       "id": 40, "date": "2026-06-29", "fav": "เยอรมนี", "dog": "ปารากวัย", "hcp": 1.5,
       "desc": "ทายชุด 2 คู่ (คู่นี้ + บราซิล–ญี่ปุ่น) · ผิดทั้ง 2 คู่ → 1 ซอง · ถูก 1 คู่ → รอด · ถูก 2 คู่ → เก่งจัง! (ไม่มีบัตรแจก)",
-      "favScore": null, "dogScore": null,
+      "favScore": 1, "dogScore": 1,
       "picks": {
         "ชนะ":  [{ "name": "ชญานิน (1st)" }, { "name": "เก็ท" }, { "name": "อิ๊ก" }, { "name": "พี่กอล์ฟ" }, { "name": "คุณศักดิ์" }, { "name": "วรากร" }, { "name": "ตี๋" }],
         "เสมอ": [],

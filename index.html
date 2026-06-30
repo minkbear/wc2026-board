@@ -295,6 +295,7 @@
   .ko-star { font-size: .72rem; color: var(--yellow); font-weight: 700; white-space: nowrap; }
   .ko-score { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 1.1em; text-align: right; color: var(--muted); }
   .ko-side.win .ko-score { color: var(--green); }
+  .ko-pens { font-size: .72rem; color: var(--muted); padding: 3px 2px 1px; border-top: 1px dashed var(--border); font-variant-numeric: tabular-nums; }
   .no-pending {
     background: var(--card);
     border: 1px dashed var(--border);
@@ -1173,20 +1174,30 @@ function renderKnockout() {
   const koDayKey = iso => new Intl.DateTimeFormat('en-CA', { ...TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso));
   const koDayLabel = iso => new Intl.DateTimeFormat('th-TH', { ...TZ, weekday: 'long', day: 'numeric', month: 'short' }).format(new Date(iso));
 
-  const sideHtml = (s, myScore, oppScore) => {
+  const sideHtml = (s, myScore, result) => {
     const nm = s.team || s.label || '?';
     const isTeam = !!s.team;
-    let cls = 'ko-side';
-    if (myScore != null && oppScore != null) cls += myScore > oppScore ? ' win' : (myScore < oppScore ? ' lose' : '');
+    const cls = 'ko-side' + (result ? ' ' + result : '');
     const star = (isTeam && bigCount[nm]) ? '<span class="ko-star">⭐×' + bigCount[nm] + '</span>' : '';
     const nameCls = isTeam ? 'ko-name' : 'ko-name ko-placeholder';
     const score = myScore != null ? myScore : '–';
     return '<div class="' + cls + '"><span class="' + nameCls + '" translate="no">' + esc(nm) + '</span>' + star +
       '<span class="ko-score">' + score + '</span></div>';
   };
-  const matchHtml = m => '<div class="ko-match">' +
-    (m.datetime ? '<div class="ko-when">⏰ ' + koTime(m.datetime) + ' น.</div>' : '') +
-    sideHtml(m.home, m.homeScore, m.awayScore) + sideHtml(m.away, m.awayScore, m.homeScore) + '</div>';
+  const matchHtml = m => {
+    // ผู้ชนะ: สกอร์มากกว่า; ถ้าเสมอใช้ field winner (ดวลจุดโทษ)
+    let homeWin = null;
+    if (m.homeScore != null && m.awayScore != null) {
+      if (m.homeScore !== m.awayScore) homeWin = m.homeScore > m.awayScore;
+      else if (m.winner) homeWin = m.winner === 'home';
+    }
+    const hRes = homeWin == null ? null : (homeWin ? 'win' : 'lose');
+    const aRes = homeWin == null ? null : (homeWin ? 'lose' : 'win');
+    const pens = m.pens ? '<div class="ko-pens">ดวลจุดโทษ ' + m.pens.home + '–' + m.pens.away + '</div>' : '';
+    return '<div class="ko-match">' +
+      (m.datetime ? '<div class="ko-when">⏰ ' + koTime(m.datetime) + ' น.</div>' : '') +
+      sideHtml(m.home, m.homeScore, hRes) + sideHtml(m.away, m.awayScore, aRes) + pens + '</div>';
+  };
 
   // เรียงตามวันเวลา (คู่ที่ยังไม่มีกำหนดไปท้าย) แล้วจัดกลุ่มตามวัน (เวลาไทย)
   ko.sort((a, b) => (a.datetime || '9').localeCompare(b.datetime || '9'));
