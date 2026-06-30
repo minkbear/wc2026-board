@@ -298,6 +298,12 @@
   .ko-score { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 1.1em; text-align: right; color: var(--muted); }
   .ko-side.win .ko-score { color: var(--green); }
   .ko-pens { font-size: .72rem; color: var(--muted); padding: 3px 2px 1px; border-top: 1px dashed var(--border); font-variant-numeric: tabular-nums; }
+  .ko-subtabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 3px; margin-bottom: 14px; }
+  .ko-subtabs button { min-height: 36px; border: none; border-radius: 7px; background: transparent; color: var(--muted); font-size: .82rem; font-weight: 700; font-family: inherit; cursor: pointer; touch-action: manipulation; }
+  .ko-subtabs button[aria-selected="true"] { background: var(--accent); color: #fff; }
+  .ko-subtabs button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  @media (prefers-reduced-motion: no-preference) { .ko-subtabs button { transition: background-color .15s, color .15s; } }
+  .ko-panel[hidden] { display: none; }
   .no-pending {
     background: var(--card);
     border: 1px dashed var(--border);
@@ -445,7 +451,7 @@
   <p class="live-status" id="live-status" aria-live="polite"></p>
 
   <div class="tabs" role="tablist" aria-label="หมวดการทายผล">
-    <button id="tab-ko" role="tab" aria-selected="false" aria-controls="sec-ko">🏟️ 32 ทีม</button>
+    <button id="tab-ko" role="tab" aria-selected="false" aria-controls="sec-ko">🏟️ น็อกเอาต์</button>
     <button id="tab-big" role="tab" aria-selected="true" aria-controls="sec-big">🏆 ทายผลใหญ่</button>
     <button id="tab-daily" role="tab" aria-selected="false" aria-controls="sec-daily">📅 รายวัน</button>
     <button id="tab-board" role="tab" aria-selected="false" aria-controls="sec-board">📊 คะแนน</button>
@@ -454,7 +460,7 @@
 
   <!-- ============ รอบ 32 ทีม (bracket) ============ -->
   <section id="sec-ko" role="tabpanel" aria-labelledby="tab-ko">
-    <h2 style="margin:0 0 4px">🏟️ รอบ 32 ทีม</h2>
+    <h2 style="margin:0 0 4px">🏟️ สายน็อกเอาต์</h2>
     <div class="ko-legend">⭐ = ทีมในโพยใหญ่ของกลุ่ม · ตัวเลขในดาว = มีกี่คนเลือกทีมนั้น</div>
     <div id="ko-bracket"></div>
   </section>
@@ -1214,8 +1220,37 @@ function renderKnockout() {
     });
     return html + '</div>';
   };
-  const out = renderRound(ko.r32, '🏟️ รอบ 32 ทีม') + renderRound(ko.r16, '⚔️ รอบ 16 ทีม');
-  el.innerHTML = out || '<div class="ko-legend">ยังไม่มีข้อมูลสายน็อกเอาต์</div>';
+  // sub-tab ต่อรอบ — กดเข้าถึงรอบนั้นได้เลย (โชว์เฉพาะรอบที่มีข้อมูล)
+  const ROUNDS = [
+    { key: 'r32', short: '32 ทีม', title: '🏟️ รอบ 32 ทีม' },
+    { key: 'r16', short: '16 ทีม', title: '⚔️ รอบ 16 ทีม' },
+    { key: 'qf', short: '8 ทีม', title: '🥊 รอบ 8 ทีม' },
+    { key: 'sf', short: '4 ทีม', title: '🔥 รอบรองฯ' },
+    { key: 'final', short: 'ชิงฯ', title: '🏆 ชิงชนะเลิศ' }
+  ];
+  const present = ROUNDS.filter(r => (ko[r.key] || []).length);
+  if (!present.length) { el.innerHTML = '<div class="ko-legend">ยังไม่มีข้อมูลสายน็อกเอาต์</div>'; return; }
+  el.innerHTML =
+    '<div class="ko-subtabs" role="tablist" aria-label="รอบน็อกเอาต์">' +
+      present.map((r, i) => '<button role="tab" aria-selected="' + (i === 0) + '" data-kosub="' + r.key + '">' + r.short + '</button>').join('') +
+    '</div>' +
+    present.map((r, i) => '<div class="ko-panel' + (i === 0 ? ' active' : '') + '" data-kopanel="' + r.key + '"' + (i === 0 ? '' : ' hidden') + '>' + renderRound(ko[r.key], r.title) + '</div>').join('');
+
+  const koBtns = Array.prototype.slice.call(el.querySelectorAll('.ko-subtabs button'));
+  const koPanels = Array.prototype.slice.call(el.querySelectorAll('.ko-panel'));
+  const showKo = key => {
+    koBtns.forEach(b => b.setAttribute('aria-selected', String(b.dataset.kosub === key)));
+    koPanels.forEach(p => { const on = p.dataset.kopanel === key; p.classList.toggle('active', on); p.hidden = !on; });
+  };
+  koBtns.forEach((b, i) => {
+    b.addEventListener('click', () => showKo(b.dataset.kosub));
+    b.addEventListener('keydown', ev => {
+      if (ev.key !== 'ArrowRight' && ev.key !== 'ArrowLeft') return;
+      ev.preventDefault();
+      const next = koBtns[(i + (ev.key === 'ArrowRight' ? 1 : koBtns.length - 1)) % koBtns.length];
+      showKo(next.dataset.kosub); next.focus();
+    });
+  });
 }
 
 (async () => {
