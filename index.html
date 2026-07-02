@@ -1044,7 +1044,7 @@ function renderYakhom() {
     (ykRows || emptyRow(2, 'ยังไม่มีใครโดนยาขม 🎉')) +
     '</table></div>';
 
-  // ✅ ใช้หนี้: 1 แถวต่อ entry (วันเดียวกันมีได้หลาย entry เช่น ยก + จ่ายจริง)
+  // ✅ ใช้หนี้: 1 แถวต่อ entry (1 record ต่อวัน; รวมทุกการจ่ายของวันไว้ใน entry เดียว, note อธิบายกรณีพิเศษเช่น "ยก")
   const paidRows = YAKHOM_PAID.slice().sort((a, b) => b.date.localeCompare(a.date))
     .map(e => '<tr><td>' + dateCell(e.date) + '</td><td>' + fmt(e.payments) + '</td><td>' +
       (e.note ? esc(e.note) : dash) + '</td></tr>').join('');
