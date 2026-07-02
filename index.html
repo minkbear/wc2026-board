@@ -489,9 +489,7 @@
     <h2>📅 คะแนนทายผลรายวัน</h2>
     <p class="hint">นับเฉพาะคู่ที่มีผลแล้ว — เรียงตามจำนวนทายถูก (เลื่อนตารางซ้าย-ขวาได้)</p>
     <div class="table-wrap"><table class="board" id="daily-board"></table></div>
-    <h2 style="margin-top:24px">🏆 คะแนนทายผลใหญ่</h2>
-    <p class="hint">จำนวนทีมที่ทายถูก จาก 4 ทีมเข้ารอบรองฯ จริง</p>
-    <div class="table-wrap"><table class="board" id="big-board"></table></div>
+    <p class="hint" style="margin-top:16px">คะแนนทายผลใหญ่ดูได้ที่แท็บ 🏆 ทายผลใหญ่</p>
   </section>
 
   <!-- ============ ทำเนียบยาขม ============ -->
@@ -1183,22 +1181,7 @@ function renderBoard() {
         '><td translate="no">' + medal + esc(p) + '</td><td>' + s.bet +
         '</td><td>' + s.correct + '</td><td>' + s.wrong + '</td><td>' + (s.bet - settled) + '</td><td>' + rate + '</td></tr>';
     }).join('');
-
-  const bigRows = PEOPLE
-    .map(p => {
-      const teams = (BIG_BETS[p] || {}).teams || [];
-      return [p, teams.length, teams.filter(t => SEMIS_ACTUAL.includes(t)).length];
-    })
-    .filter(([, n]) => n > 0)
-    .sort((a, b) => b[2] - a[2]);
-  document.getElementById('big-board').innerHTML =
-    '<tr><th>ชื่อ</th><th>ส่งโพย</th><th>ทายถูก</th></tr>' +
-    bigRows.map(([p, n, h], i) => {
-      const medal = (i < 3 && SEMIS_ACTUAL.length > 0 && h > 0) ? '<span class="medal">' + medals[i] + '</span>' : '';
-      return '<tr' + (i === 0 && h > 0 ? ' class="top"' : '') +
-        '><td translate="no">' + medal + esc(p) + '</td><td>' + n + '/4</td><td>' +
-        (SEMIS_ACTUAL.length ? h + '/4' : '-') + '</td></tr>';
-    }).join('');
+  // คะแนนทายผลใหญ่ย้ายไปดูที่แท็บ #big (renderBig) แล้ว — ไม่แสดงซ้ำในแท็บคะแนน
 }
 
 // รอบ 32 ทีม — bracket จากข้อมูล knockout.r32 (กรอกมือ) + ไฮไลต์ทีมในโพยใหญ่
