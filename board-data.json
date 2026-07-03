@@ -38,7 +38,7 @@
       { "id": 90, "half": "L", "datetime": "2026-07-04T17:00:00Z", "home": { "team": "แคนาดา" }, "away": { "team": "โมร็อกโก" }, "homeScore": null, "awayScore": null },
       { "id": 89, "half": "L", "datetime": "2026-07-04T21:00:00Z", "home": { "team": "ปารากวัย" }, "away": { "team": "ฝรั่งเศส" }, "homeScore": null, "awayScore": null },
       { "id": 93, "half": "R", "datetime": "2026-07-05T20:00:00Z", "home": { "team": "บราซิล" }, "away": { "team": "นอร์เวย์" }, "homeScore": null, "awayScore": null },
-      { "id": 91, "half": "L", "home": { "label": "ผู้ชนะ โปรตุเกส/โครเอเชีย" }, "away": { "label": "ผู้ชนะ สเปน/ออสเตรีย" }, "homeScore": null, "awayScore": null },
+      { "id": 91, "half": "L", "datetime": "2026-07-06T19:00:00Z", "home": { "team": "โปรตุเกส" }, "away": { "team": "สเปน" }, "homeScore": null, "awayScore": null },
       { "id": 92, "half": "L", "datetime": "2026-07-07T00:00:00Z", "home": { "team": "สหรัฐอเมริกา" }, "away": { "team": "เบลเยียม" }, "homeScore": null, "awayScore": null },
       { "id": 94, "half": "R", "datetime": "2026-07-06T00:00:00Z", "home": { "team": "เม็กซิโก" }, "away": { "team": "อังกฤษ" }, "homeScore": null, "awayScore": null },
       { "id": 95, "half": "R", "home": { "label": "ผู้ชนะ อาร์เจนตินา/เคปเวิร์ด" }, "away": { "label": "ผู้ชนะ ออสเตรเลีย/อียิปต์" }, "homeScore": null, "awayScore": null },
