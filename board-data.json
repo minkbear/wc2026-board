@@ -29,7 +29,7 @@
       { "id": 82, "half": "R", "datetime": "2026-06-30T17:00:00Z", "home": { "team": "ไอวอรีโคสต์" }, "away": { "team": "นอร์เวย์" }, "homeScore": 1, "awayScore": 2 },
       { "id": 83, "half": "R", "datetime": "2026-07-01T01:00:00Z", "home": { "team": "เม็กซิโก" }, "away": { "team": "เอกวาดอร์" }, "homeScore": 2, "awayScore": 0 },
       { "id": 84, "half": "R", "datetime": "2026-07-01T16:00:00Z", "home": { "team": "อังกฤษ" }, "away": { "team": "คองโก" }, "homeScore": 2, "awayScore": 1 },
-      { "id": 85, "half": "R", "datetime": "2026-07-03T22:00:00Z", "home": { "team": "อาร์เจนตินา" }, "away": { "team": "เคปเวิร์ด" }, "homeScore": null, "awayScore": null },
+      { "id": 85, "half": "R", "datetime": "2026-07-03T22:00:00Z", "home": { "team": "อาร์เจนตินา" }, "away": { "team": "เคปเวิร์ด" }, "homeScore": 3, "awayScore": 2, "note": "ต่อเวลา (AET)" },
       { "id": 86, "half": "R", "datetime": "2026-07-03T18:00:00Z", "home": { "team": "ออสเตรเลีย" }, "away": { "team": "อียิปต์" }, "homeScore": null, "awayScore": null },
       { "id": 87, "half": "R", "datetime": "2026-07-03T03:00:00Z", "home": { "team": "สวิตเซอร์แลนด์" }, "away": { "team": "แอลจีเรีย" }, "homeScore": 2, "awayScore": 0 },
       { "id": 88, "half": "R", "datetime": "2026-07-04T01:30:00Z", "home": { "team": "โคลอมเบีย" }, "away": { "team": "กานา" }, "homeScore": null, "awayScore": null }
@@ -41,7 +41,7 @@
       { "id": 91, "half": "L", "datetime": "2026-07-06T19:00:00Z", "home": { "team": "โปรตุเกส" }, "away": { "team": "สเปน" }, "homeScore": null, "awayScore": null },
       { "id": 92, "half": "L", "datetime": "2026-07-07T00:00:00Z", "home": { "team": "สหรัฐอเมริกา" }, "away": { "team": "เบลเยียม" }, "homeScore": null, "awayScore": null },
       { "id": 94, "half": "R", "datetime": "2026-07-06T00:00:00Z", "home": { "team": "เม็กซิโก" }, "away": { "team": "อังกฤษ" }, "homeScore": null, "awayScore": null },
-      { "id": 95, "half": "R", "home": { "label": "ผู้ชนะ อาร์เจนตินา/เคปเวิร์ด" }, "away": { "label": "ผู้ชนะ ออสเตรเลีย/อียิปต์" }, "homeScore": null, "awayScore": null },
+      { "id": 95, "half": "R", "datetime": "2026-07-07T16:00:00Z", "home": { "team": "อาร์เจนตินา" }, "away": { "label": "ผู้ชนะ ออสเตรเลีย/อียิปต์" }, "homeScore": null, "awayScore": null },
       { "id": 96, "half": "R", "datetime": "2026-07-07T20:00:00Z", "home": { "team": "สวิตเซอร์แลนด์" }, "away": { "label": "ผู้ชนะ โคลอมเบีย/กานา" }, "homeScore": null, "awayScore": null }
     ]
   },
@@ -610,7 +610,7 @@
     {
       "id": 49, "date": "2026-07-03", "fav": "อาร์เจนตินา", "dog": "เคปเวิร์ด", "format": "manner",
       "desc": "ทายชุด 2 ข้อ (ข้อ 1/2) · อาร์เจนตินา ต่อ 2 ลูก · นับใน 120 นาที · ถูก 2 ข้อ → รอด + 🪄 บัตรคุณพระ 5 ใบ · ถูก 1 ข้อ → รอด · ไม่ถูกเลย → 1 ซอง",
-      "favScore": null, "dogScore": null, "outcome": null,
+      "favScore": null, "dogScore": null, "outcome": "แพ้",
       "options": [
         { "key": "ชนะ" }, { "key": "เสมอ" }, { "key": "แพ้" }
       ],
@@ -623,7 +623,7 @@
     {
       "id": 50, "date": "2026-07-03", "fav": "อาร์เจนตินา", "dog": "เคปเวิร์ด", "format": "manner",
       "desc": "ทายชุด 2 ข้อ (ข้อ 2/2) · เมสซี่ยิงกี่ลูกในนัดนี้ · นับใน 120 นาที · ถูก 2 ข้อ → รอด + 🪄 บัตรคุณพระ 5 ใบ · ถูก 1 ข้อ → รอด · ไม่ถูกเลย → 1 ซอง",
-      "favScore": null, "dogScore": null, "outcome": null,
+      "favScore": null, "dogScore": null, "outcome": "เมสซี่ 1 ลูก",
       "options": [
         { "key": "เมสซี่ 0 ลูก" }, { "key": "เมสซี่ 1 ลูก" },
         { "key": "เมสซี่ 2 ลูก" }, { "key": "เมสซี่ 3 ลูกขึ้นไป" }
