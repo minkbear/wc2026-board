@@ -43,6 +43,12 @@
       { "id": 94, "half": "R", "datetime": "2026-07-06T00:00:00Z", "home": { "team": "เม็กซิโก" }, "away": { "team": "อังกฤษ" }, "homeScore": null, "awayScore": null },
       { "id": 95, "half": "R", "datetime": "2026-07-07T16:00:00Z", "home": { "team": "อาร์เจนตินา" }, "away": { "team": "อียิปต์" }, "homeScore": null, "awayScore": null },
       { "id": 96, "half": "R", "datetime": "2026-07-07T20:00:00Z", "home": { "team": "สวิตเซอร์แลนด์" }, "away": { "team": "โคลอมเบีย" }, "homeScore": null, "awayScore": null }
+    ],
+    "qf": [
+      { "id": 97, "half": "L", "datetime": "2026-07-09T20:00:00Z", "home": { "label": "ผู้ชนะ ปารากวัย/ฝรั่งเศส" }, "away": { "label": "ผู้ชนะ แคนาดา/โมร็อกโก" }, "homeScore": null, "awayScore": null },
+      { "id": 98, "half": "R", "datetime": "2026-07-10T19:00:00Z", "home": { "label": "ผู้ชนะ บราซิล/นอร์เวย์" }, "away": { "label": "ผู้ชนะ เม็กซิโก/อังกฤษ" }, "homeScore": null, "awayScore": null },
+      { "id": 99, "half": "L", "datetime": "2026-07-11T21:00:00Z", "home": { "label": "ผู้ชนะ โปรตุเกส/สเปน" }, "away": { "label": "ผู้ชนะ สหรัฐอเมริกา/เบลเยียม" }, "homeScore": null, "awayScore": null },
+      { "id": 100, "half": "R", "datetime": "2026-07-12T01:00:00Z", "home": { "label": "ผู้ชนะ อาร์เจนตินา/อียิปต์" }, "away": { "label": "ผู้ชนะ สวิตเซอร์แลนด์/โคลอมเบีย" }, "homeScore": null, "awayScore": null }
     ]
   },
   "yakhom": [
