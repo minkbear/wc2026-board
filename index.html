@@ -959,7 +959,8 @@ function dailyCard(m) {
 }
 
 function renderDaily() {
-  const isDone = m => { const s = resolveScore(m); return s != null && s.final; };
+  // manner ตัดสินด้วยมือ (outcome) ไม่มีสกอร์ตัวเลข → จบเมื่อ outcome ถูกกรอกแล้ว; อื่นๆ จบเมื่อมีสกอร์ final
+  const isDone = m => m.format === 'manner' ? (m.outcome != null) : (() => { const s = resolveScore(m); return s != null && s.final; })();
   // คู่ที่ยังไม่จบ: ใกล้แข่งสุดขึ้นก่อน / คู่ที่จบแล้ว: ล่าสุดขึ้นก่อน เก็บในกล่องพับ
   const pending = DAILY.filter(m => !isDone(m))
     .sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);
