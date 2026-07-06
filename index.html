@@ -900,7 +900,7 @@ function dailyCard(m) {
     const sides = isMargin
       ? m.options.map(o => ({ key: o.key, head: o.margin != null ? esc(m.fav) + ' ' + esc(o.key) : esc(o.key) }))
       : isManner
-      ? m.options.map(o => ({ key: o.key, head: esc(m.fav) + ' ' + esc(o.key) }))
+      ? m.options.map(o => ({ key: o.key, head: (m.title ? '' : esc(m.fav) + ' ') + esc(o.key) }))
       : isScore
       ? Object.keys(m.picks).map(k => ({ key: k, head: esc(m.fav) + ' ' + esc(k.replace('-', ' - ')) + ' ' + esc(m.dog) }))
       : isTotal
@@ -927,7 +927,7 @@ function dailyCard(m) {
       const scoreSpan = s ? '<span class="final">' + s.favScore + ' - ' + s.dogScore + '</span>' +
         (s.live ? '<span class="live-badge">LIVE' + (s.detail ? ' · ' + esc(s.detail) : '') + '</span>' : '') : '';
       scoreHtml = '<div class="score-line">' + scoreSpan +
-        '<span class="result-tag">' + (result ? 'ผล: ' + esc(m.fav) + ' "' + esc(result) + '"' : (s ? 'รอสรุปลักษณะผล' : '⏳ รอผลบอล')) + '</span></div>';
+        '<span class="result-tag">' + (result ? 'ผล: ' + (m.title ? '' : esc(m.fav) + ' ') + '"' + esc(result) + '"' : (s ? 'รอสรุปลักษณะผล' : '⏳ รอผลบอล')) + '</span></div>';
     } else if (s && s.live) {
       const liveTag = (isMargin || isScore) ? ('ผลสด: ' + esc(result)) : (esc(m.fav) + ' "' + result + '" (สด)');
       scoreHtml = '<div class="score-line"><span class="final">' + s.favScore + ' - ' + s.dogScore + '</span>' +
@@ -946,10 +946,10 @@ function dailyCard(m) {
 
     return '<div class="match-card' + (s && s.live ? ' live' : '') + '">' +
       '<div class="match-head">' +
-      '<div class="title">' + (isTotal ? esc(m.title) : '<span class="fav">' + esc(m.fav) + '</span> vs ' + esc(m.dog)) + '</div>' +
+      '<div class="title">' + ((isTotal || (isManner && m.title)) ? esc(m.title) : '<span class="fav">' + esc(m.fav) + '</span> vs ' + esc(m.dog)) + '</div>' +
       (m.desc ? '<div class="match-desc">' + esc(m.desc) + '</div>' : '') +
       '<div class="chips">' +
-      '<span class="hcp-chip">' + (isManner ? ('ทายลักษณะผล · ' + (m.hcp != null ? hcpChip(m.hcp) : 'ไม่มีต่อ')) : isMargin ? 'ทายผลต่างประตู' : isScore ? 'ทายสกอร์เป๊ะ' : isTotal ? ('ทายผลรวมประตู' + (m.bonusOnly ? ' · พิเศษ 🃏' : '')) : hcpChip(m.hcp)) + '</span>' +
+      '<span class="hcp-chip">' + (isManner ? (m.title ? 'ทายพิเศษ' : 'ทายลักษณะผล · ' + (m.hcp != null ? hcpChip(m.hcp) : 'ไม่มีต่อ')) : isMargin ? 'ทายผลต่างประตู' : isScore ? 'ทายสกอร์เป๊ะ' : isTotal ? ('ทายผลรวมประตู' + (m.bonusOnly ? ' · พิเศษ 🃏' : '')) : hcpChip(m.hcp)) + '</span>' +
       '<span class="date-chip">📅 ' + thaiDate(m.date) + ' · คู่ที่ ' + m.id + '</span>' +
       '</div>' +
       scoreHtml +
