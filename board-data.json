@@ -38,8 +38,8 @@
       { "id": 90, "half": "L", "datetime": "2026-07-04T17:00:00Z", "home": { "team": "แคนาดา" }, "away": { "team": "โมร็อกโก" }, "homeScore": 0, "awayScore": 3 },
       { "id": 89, "half": "L", "datetime": "2026-07-04T21:00:00Z", "home": { "team": "ปารากวัย" }, "away": { "team": "ฝรั่งเศส" }, "homeScore": 0, "awayScore": 1 },
       { "id": 93, "half": "R", "datetime": "2026-07-05T20:00:00Z", "home": { "team": "บราซิล" }, "away": { "team": "นอร์เวย์" }, "homeScore": 1, "awayScore": 2 },
-      { "id": 91, "half": "L", "datetime": "2026-07-06T19:00:00Z", "home": { "team": "โปรตุเกส" }, "away": { "team": "สเปน" }, "homeScore": null, "awayScore": null },
-      { "id": 92, "half": "L", "datetime": "2026-07-07T00:00:00Z", "home": { "team": "สหรัฐอเมริกา" }, "away": { "team": "เบลเยียม" }, "homeScore": null, "awayScore": null },
+      { "id": 91, "half": "L", "datetime": "2026-07-06T19:00:00Z", "home": { "team": "โปรตุเกส" }, "away": { "team": "สเปน" }, "homeScore": 0, "awayScore": 1 },
+      { "id": 92, "half": "L", "datetime": "2026-07-07T00:00:00Z", "home": { "team": "สหรัฐอเมริกา" }, "away": { "team": "เบลเยียม" }, "homeScore": 1, "awayScore": 4 },
       { "id": 94, "half": "R", "datetime": "2026-07-06T00:00:00Z", "home": { "team": "เม็กซิโก" }, "away": { "team": "อังกฤษ" }, "homeScore": 2, "awayScore": 3 },
       { "id": 95, "half": "R", "datetime": "2026-07-07T16:00:00Z", "home": { "team": "อาร์เจนตินา" }, "away": { "team": "อียิปต์" }, "homeScore": null, "awayScore": null },
       { "id": 96, "half": "R", "datetime": "2026-07-07T20:00:00Z", "home": { "team": "สวิตเซอร์แลนด์" }, "away": { "team": "โคลอมเบีย" }, "homeScore": null, "awayScore": null }
@@ -47,7 +47,7 @@
     "qf": [
       { "id": 97, "half": "L", "datetime": "2026-07-09T20:00:00Z", "home": { "team": "ฝรั่งเศส" }, "away": { "team": "โมร็อกโก" }, "homeScore": null, "awayScore": null },
       { "id": 98, "half": "R", "datetime": "2026-07-10T19:00:00Z", "home": { "team": "นอร์เวย์" }, "away": { "team": "อังกฤษ" }, "homeScore": null, "awayScore": null },
-      { "id": 99, "half": "L", "datetime": "2026-07-11T21:00:00Z", "home": { "label": "ผู้ชนะ โปรตุเกส/สเปน" }, "away": { "label": "ผู้ชนะ สหรัฐอเมริกา/เบลเยียม" }, "homeScore": null, "awayScore": null },
+      { "id": 99, "half": "L", "datetime": "2026-07-11T21:00:00Z", "home": { "team": "สเปน" }, "away": { "label": "ผู้ชนะ สหรัฐอเมริกา/เบลเยียม" }, "homeScore": null, "awayScore": null },
       { "id": 100, "half": "R", "datetime": "2026-07-12T01:00:00Z", "home": { "label": "ผู้ชนะ อาร์เจนตินา/อียิปต์" }, "away": { "label": "ผู้ชนะ สวิตเซอร์แลนด์/โคลอมเบีย" }, "homeScore": null, "awayScore": null }
     ]
   },
@@ -688,7 +688,7 @@
     {
       "id": 54, "date": "2026-07-06", "fav": "สเปน", "dog": "โปรตุเกส", "format": "manner", "hcp": 0.5,
       "desc": "ชุด 3 อย่าง (อย่างที่ 1/3) · สเปน ต่อ 0.5 โปรตุเกส · นับผลใน 120 นาที · ถูก 3 → รอด + บัตรเจ้าคณะ (ถ้าไม่มีหนี้ค้าง ณ เวลาแทง) · ถูก 2 → รอด · ถูก 1 → 1 ซอง · ผิดหมด → 2 ซอง",
-      "favScore": null, "dogScore": null, "outcome": null,
+      "favScore": null, "dogScore": null, "outcome": "ชนะ",
       "options": [ { "key": "ชนะ" }, { "key": "แพ้" } ],
       "picks": {
         "ชนะ": [ { "name": "วรุตม์" }, { "name": "อิ๊ก" }, { "name": "เก็ท" }, { "name": "ตี๋" }, { "name": "พี่ตุลา" }, { "name": "ชญานิน (1st)" }, { "name": "คุณศักดิ์" }, { "name": "จูน" }, { "name": "คุณเปิ๊ด" } ],
