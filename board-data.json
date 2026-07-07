@@ -47,7 +47,7 @@
     "qf": [
       { "id": 97, "half": "L", "datetime": "2026-07-09T20:00:00Z", "home": { "team": "ฝรั่งเศส" }, "away": { "team": "โมร็อกโก" }, "homeScore": null, "awayScore": null },
       { "id": 98, "half": "R", "datetime": "2026-07-10T19:00:00Z", "home": { "team": "นอร์เวย์" }, "away": { "team": "อังกฤษ" }, "homeScore": null, "awayScore": null },
-      { "id": 99, "half": "L", "datetime": "2026-07-11T21:00:00Z", "home": { "team": "สเปน" }, "away": { "label": "ผู้ชนะ สหรัฐอเมริกา/เบลเยียม" }, "homeScore": null, "awayScore": null },
+      { "id": 99, "half": "L", "datetime": "2026-07-11T21:00:00Z", "home": { "team": "สเปน" }, "away": { "team": "เบลเยียม" }, "homeScore": null, "awayScore": null },
       { "id": 100, "half": "R", "datetime": "2026-07-12T01:00:00Z", "home": { "label": "ผู้ชนะ อาร์เจนตินา/อียิปต์" }, "away": { "label": "ผู้ชนะ สวิตเซอร์แลนด์/โคลอมเบีย" }, "homeScore": null, "awayScore": null }
     ]
   },
@@ -698,7 +698,7 @@
     {
       "id": 55, "date": "2026-07-07", "fav": "สหรัฐอเมริกา", "dog": "เบลเยียม", "format": "manner",
       "desc": "ชุด 3 อย่าง (อย่างที่ 2/3) · สหรัฐอเมริกา ไม่มีต่อ เบลเยียม · นับผลใน 120 นาที · ถูก 3 → รอด + บัตรเจ้าคณะ (ถ้าไม่มีหนี้ค้าง ณ เวลาแทง) · ถูก 2 → รอด · ถูก 1 → 1 ซอง · ผิดหมด → 2 ซอง",
-      "favScore": null, "dogScore": null, "outcome": null,
+      "favScore": null, "dogScore": null, "outcome": "แพ้",
       "options": [ { "key": "ชนะ" }, { "key": "เสมอ" }, { "key": "แพ้" } ],
       "picks": {
         "ชนะ": [ { "name": "ปอง" }, { "name": "อิ๊ก" }, { "name": "เก็ท" }, { "name": "ตี๋" }, { "name": "ชญานิน (1st)" }, { "name": "จูน" }, { "name": "คุณเปิ๊ด" } ],
@@ -710,7 +710,7 @@
       "id": 56, "date": "2026-07-07", "fav": "สเปน", "dog": "สหรัฐอเมริกา", "format": "manner",
       "title": "อย่างที่ 3/3: ใน 2 คู่บน มีกี่คู่เล่นถึง 120 นาที",
       "desc": "ชุด 3 อย่าง (อย่างที่ 3/3) · นับจากคู่ สเปน-โปรตุเกส + สหรัฐอเมริกา-เบลเยียม ว่ามีกี่คู่ที่ต้องต่อเวลา (120 นาที) · ถูก 3 → รอด + บัตรเจ้าคณะ (ถ้าไม่มีหนี้ค้าง ณ เวลาแทง) · ถูก 2 → รอด · ถูก 1 → 1 ซอง · ผิดหมด → 2 ซอง",
-      "favScore": null, "dogScore": null, "outcome": null,
+      "favScore": null, "dogScore": null, "outcome": "0 คู่",
       "options": [ { "key": "0 คู่" }, { "key": "1 คู่" }, { "key": "2 คู่" } ],
       "picks": {
         "0 คู่": [ { "name": "ปอง" }, { "name": "เก็ท" } ],
