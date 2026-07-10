@@ -496,11 +496,12 @@
   <section id="sec-yakhom" role="tabpanel" aria-labelledby="tab-yakhom">
     <h2>🍵 ทำเนียบยาขม</h2>
     <details class="yk-rules">
-      <summary>🃏 กติกาบัตร — นางฟ้า · คุณพระ · จัดเต็ม</summary>
+      <summary>🃏 กติกาบัตร — นางฟ้า · คุณพระ · บุญล้น · จัดเต็ม</summary>
       <ul>
         <li>🃏 <b>บัตรนางฟ้า</b> — ใช้ล้างหนี้ยาขมได้ <b>ใบละ 1 ซอง</b> · ใช้ได้เฉพาะ <b>รอบแบ่งกลุ่ม</b> เท่านั้น</li>
-        <li>🪄 <b>บัตรคุณพระ</b> — ใช้ล้างหนี้ยาขมได้ <b>ใบละ 1 ซอง</b> เหมือนนางฟ้า · แต่ใช้ได้เฉพาะ <b>รอบ 32 ทีม</b> เท่านั้น (ตอนนี้เก็บไว้ก่อน ใช้ไม่ได้)</li>
-        <li>บัตรแต่ละชนิดใช้ข้ามรอบกันไม่ได้ — นางฟ้าใช้ได้แค่รอบกลุ่ม คุณพระใช้ได้แค่รอบ 32 ทีม</li>
+        <li>🪄 <b>บัตรคุณพระ</b> — ใช้ล้างหนี้ยาขมได้ <b>ใบละ 1 ซอง</b> เหมือนนางฟ้า · แต่ใช้ได้เฉพาะ <b>รอบ 32 ทีม</b> เท่านั้น</li>
+        <li>🎁 <b>บัตรบุญล้น</b> — ใช้ล้างหนี้ยาขมได้ <b>ใบละ 1 ซอง</b> · ใช้ได้เฉพาะ <b>รอบ 8 ทีม</b> เท่านั้น (ได้จากการทายถูกครบทั้งชุด)</li>
+        <li>บัตรแต่ละชนิดใช้ข้ามรอบกันไม่ได้ — นางฟ้าใช้ได้แค่รอบกลุ่ม · คุณพระรอบ 32 ทีม · บุญล้นรอบ 8 ทีม</li>
         <li>⚡ <b>บัตรจัดเต็ม</b> — บัตร<b>ลงโทษ</b> (ได้จากการทายผิดหมดทั้งชุด) · ใครถืออยู่จะโดน <b>×2</b> จาก<b>ซองแทงรายวันของวันถัดไป</b> เท่านั้น (บังคับใช้ · ไม่รวมโทษตกรอบจากทายผลใหญ่) เช่น วันถัดไปโดน 1 ซอง → กลายเป็น 2</li>
       </ul>
     </details>
@@ -516,7 +517,7 @@
 // ข้อมูลบอร์ดอยู่ใน board-data.json — แก้ข้อมูล/ผลที่ไฟล์นั้น
 // ============================================================
 
-let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [], YAKHOM = [], YAKHOM_PAID = [], ANGEL = [], ANGEL_USED = [], ANGEL_FORFEITED = [], KHUNPHRA = [], KHUNPHRA_USED = [], KHUNPHRA_FORFEITED = [], JADTEM = [], JADTEM_USED = [], KNOCKOUT = {}, KO_ELIM = {};
+let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [], YAKHOM = [], YAKHOM_PAID = [], ANGEL = [], ANGEL_USED = [], ANGEL_FORFEITED = [], KHUNPHRA = [], KHUNPHRA_USED = [], KHUNPHRA_FORFEITED = [], JADTEM = [], JADTEM_USED = [], BUNLON = [], BUNLON_USED = [], BUNLON_FORFEITED = [], KNOCKOUT = {}, KO_ELIM = {};
 
 async function loadData() {
   const res = await fetch('./board-data.json', { cache: 'no-cache' });
@@ -536,6 +537,9 @@ async function loadData() {
   KHUNPHRA_FORFEITED = d.khunphraForfeited || [];
   JADTEM = d.jadtem || [];
   JADTEM_USED = d.jadtemUsed || [];
+  BUNLON = d.bunlon || [];
+  BUNLON_USED = d.bunlonUsed || [];
+  BUNLON_FORFEITED = d.bunlonForfeited || [];
   KNOCKOUT = d.knockout || {};
   KO_ELIM = knockoutElim();
 }
@@ -1014,6 +1018,14 @@ function renderYakhom() {
   const jtUsed = {};
   JADTEM_USED.forEach(e => Object.entries(e.uses).forEach(([n, c]) => { jtUsed[n] = (jtUsed[n] || 0) + c; }));
 
+  // บัตรบุญล้น: ได้มา − ใช้ไป − ถูกริบ = ถือไว้ (ใช้ล้างหนี้ได้ใบละ 1 ซอง เฉพาะรอบ 8 ทีม เหมือนคุณพระในรอบ 32)
+  const blEarned = {};
+  BUNLON.forEach(a => a.names.forEach(n => { blEarned[n] = (blEarned[n] || 0) + 1; }));
+  const blUsed = {};
+  BUNLON_USED.forEach(e => Object.entries(e.uses).forEach(([n, c]) => { blUsed[n] = (blUsed[n] || 0) + c; }));
+  const blForfeited = {};
+  BUNLON_FORFEITED.forEach(e => Object.entries(e.forfeits).forEach(([n, c]) => { blForfeited[n] = (blForfeited[n] || 0) + c; }));
+
   // ตารางสรุปต่อคน: โดนยาขม / ใช้หนี้แล้ว / คงเหลือ / บัตรคุณพระ — เรียงคงเหลือมากสุดก่อน
   // บัตรที่ใช้ (นางฟ้า ANGEL_USED รอบกลุ่ม + คุณพระ KHUNPHRA_USED รอบ 32) ผ่านยาขมล้างหนี้ใบละ 1 ซอง
   // จึงนับรวมกับเงินสด; การริบไม่ล้างหนี้
@@ -1023,25 +1035,28 @@ function renderYakhom() {
       const paid = paidTotals[p] || 0;
       const used = cardUsed[p] || 0;       // บัตรนางฟ้าที่ใช้ (รอบกลุ่ม)
       const kused = kpUsed[p] || 0;        // บัตรคุณพระที่ใช้ (รอบ 32)
-      const cleared = Math.min(paid + used + kused, got);
+      const bused = blUsed[p] || 0;        // บัตรบุญล้นที่ใช้ (รอบ 8 ทีม)
+      const cleared = Math.min(paid + used + kused + bused, got);
       const cards = Math.max((cardEarned[p] || 0) - used - (cardForfeited[p] || 0), 0);
       const kcards = Math.max((kpEarned[p] || 0) - kused - (kpForfeited[p] || 0), 0);
+      const bcards = Math.max((blEarned[p] || 0) - bused - (blForfeited[p] || 0), 0);
       const jcards = Math.max((jtEarned[p] || 0) - (jtUsed[p] || 0), 0);
-      return { p, got, paid, used, kused, owe: got - cleared, cards, kcards, jcards };
+      return { p, got, paid, used, kused, bused, owe: got - cleared, cards, kcards, bcards, jcards };
     })
-    .sort((a, b) => b.owe - a.owe || b.got - a.got || b.cards - a.cards || b.kcards - a.kcards || a.p.localeCompare(b.p, 'th'));
+    .sort((a, b) => b.owe - a.owe || b.got - a.got || b.cards - a.cards || b.kcards - a.kcards || b.bcards - a.bcards || a.p.localeCompare(b.p, 'th'));
   const maxOwe = rows.length ? rows[0].owe : 0;
   tableEl.innerHTML =
-    '<tr><th>ชื่อ</th><th>โดนยาขม (ซอง)</th><th>ใช้หนี้แล้ว</th><th>คงเหลือ</th><th>🪄 บัตรคุณพระ</th><th>⚡ จัดเต็ม</th></tr>' +
+    '<tr><th>ชื่อ</th><th>โดนยาขม (ซอง)</th><th>ใช้หนี้แล้ว</th><th>คงเหลือ</th><th>🪄 บัตรคุณพระ</th><th>🎁 บุญล้น</th><th>⚡ จัดเต็ม</th></tr>' +
     rows.map(r =>
       '<tr' + (r.owe > 0 && r.owe === maxOwe ? ' class="top-yk"' : (r.got > 0 && r.owe === 0 ? ' class="paid-yk"' : '')) +
       '><td translate="no">' + (r.owe > 0 ? '🍵 ' : (r.got > 0 ? '✅ ' : '')) + esc(r.p) + '</td>' +
       '<td>' + (r.got > 0 ? '×' + r.got : '-') + '</td>' +
-      '<td>' + (r.paid > 0 || r.used > 0 || r.kused > 0
-        ? [r.paid > 0 ? '×' + r.paid : null, r.used > 0 ? '🃏×' + r.used : null, r.kused > 0 ? '🪄×' + r.kused : null].filter(Boolean).join(' ')
+      '<td>' + (r.paid > 0 || r.used > 0 || r.kused > 0 || r.bused > 0
+        ? [r.paid > 0 ? '×' + r.paid : null, r.used > 0 ? '🃏×' + r.used : null, r.kused > 0 ? '🪄×' + r.kused : null, r.bused > 0 ? '🎁×' + r.bused : null].filter(Boolean).join(' ')
         : '-') + '</td>' +
       '<td>' + (r.owe > 0 ? '×' + r.owe : (r.got > 0 ? 'ครบ' : '-')) + '</td>' +
       '<td>' + (r.kcards > 0 ? '🪄 ×' + r.kcards : '-') + '</td>' +
+      '<td>' + (r.bcards > 0 ? '<span title="ใช้ล้างหนี้ได้ในรอบ 8 ทีม">🎁 ×' + r.bcards + '</span>' : '-') + '</td>' +
       '<td>' + (r.jcards > 0 ? '<span title="โดน ×2 จากซองแทงรายวันวันถัดไป">⚡ ×' + r.jcards + '</span>' : '-') + '</td></tr>'
     ).join('');
 
@@ -1091,6 +1106,7 @@ function renderYakhom() {
   };
   const angelTable = cardTable(ANGEL, ANGEL_USED, ANGEL_FORFEITED, '🃏');
   const kpTable = cardTable(KHUNPHRA, KHUNPHRA_USED, KHUNPHRA_FORFEITED, '🪄');
+  const blTable = cardTable(BUNLON, BUNLON_USED, BUNLON_FORFEITED, '🎁');
 
   // ⚡ บัตรจัดเต็ม: การ์ดลงโทษ ไม่มีริบ (ได้รับ/ใช้) — 1 แถวต่อวัน
   const jtByDate = {};
@@ -1110,12 +1126,14 @@ function renderYakhom() {
       '<button role="tab" aria-selected="false" data-yksub="paid">✅ ใช้หนี้</button>' +
       '<button role="tab" aria-selected="false" data-yksub="angel">🃏 นางฟ้า</button>' +
       '<button role="tab" aria-selected="false" data-yksub="kp">🪄 คุณพระ</button>' +
+      '<button role="tab" aria-selected="false" data-yksub="bl">🎁 บุญล้น</button>' +
       '<button role="tab" aria-selected="false" data-yksub="jt">⚡ จัดเต็ม</button>' +
     '</div>' +
     '<div class="yk-panel active" data-ykpanel="yakhom">' + ykTable + '</div>' +
     '<div class="yk-panel" data-ykpanel="paid" hidden>' + paidTable + '</div>' +
     '<div class="yk-panel" data-ykpanel="angel" hidden>' + angelTable + '</div>' +
     '<div class="yk-panel" data-ykpanel="kp" hidden>' + kpTable + '</div>' +
+    '<div class="yk-panel" data-ykpanel="bl" hidden>' + blTable + '</div>' +
     '<div class="yk-panel" data-ykpanel="jt" hidden>' + jtTable + '</div>';
 
   // ผูก event sub-tab (คลิก + ลูกศรซ้าย/ขวา)
