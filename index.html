@@ -1046,7 +1046,7 @@ function renderYakhom() {
     .sort((a, b) => b.owe - a.owe || b.got - a.got || b.cards - a.cards || b.kcards - a.kcards || b.bcards - a.bcards || a.p.localeCompare(b.p, 'th'));
   const maxOwe = rows.length ? rows[0].owe : 0;
   tableEl.innerHTML =
-    '<tr><th>ชื่อ</th><th>โดนยาขม (ซอง)</th><th>ใช้หนี้แล้ว</th><th>คงเหลือ</th><th>🪄 บัตรคุณพระ</th><th>🎁 บุญล้น</th><th>⚡ จัดเต็ม</th></tr>' +
+    '<tr><th>ชื่อ</th><th>โดนยาขม (ซอง)</th><th>ใช้หนี้แล้ว</th><th>คงเหลือ</th><th>🎁 บุญล้น</th><th>⚡ จัดเต็ม</th></tr>' +
     rows.map(r =>
       '<tr' + (r.owe > 0 && r.owe === maxOwe ? ' class="top-yk"' : (r.got > 0 && r.owe === 0 ? ' class="paid-yk"' : '')) +
       '><td translate="no">' + (r.owe > 0 ? '🍵 ' : (r.got > 0 ? '✅ ' : '')) + esc(r.p) + '</td>' +
@@ -1055,7 +1055,6 @@ function renderYakhom() {
         ? [r.paid > 0 ? '×' + r.paid : null, r.used > 0 ? '🃏×' + r.used : null, r.kused > 0 ? '🪄×' + r.kused : null, r.bused > 0 ? '🎁×' + r.bused : null].filter(Boolean).join(' ')
         : '-') + '</td>' +
       '<td>' + (r.owe > 0 ? '×' + r.owe : (r.got > 0 ? 'ครบ' : '-')) + '</td>' +
-      '<td>' + (r.kcards > 0 ? '🪄 ×' + r.kcards : '-') + '</td>' +
       '<td>' + (r.bcards > 0 ? '<span title="ใช้ล้างหนี้ได้ในรอบ 8 ทีม">🎁 ×' + r.bcards + '</span>' : '-') + '</td>' +
       '<td>' + (r.jcards > 0 ? '<span title="โดน ×2 จากซองแทงรายวันวันถัดไป">⚡ ×' + r.jcards + '</span>' : '-') + '</td></tr>'
     ).join('');
