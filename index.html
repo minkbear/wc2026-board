@@ -1283,12 +1283,13 @@ function renderKnockout() {
     return html + '</div>';
   };
   // sub-tab ต่อรอบ — กดเข้าถึงรอบนั้นได้เลย (โชว์เฉพาะรอบที่มีข้อมูล)
+  // เรียงจากรอบล่าสุดลงไป: ชิงฯ → 4 ทีม → 8 ทีม → 16 ทีม → 32 ทีม (แท็บแรก = รอบล่าสุด)
   const ROUNDS = [
-    { key: 'r32', short: '32 ทีม', title: '🏟️ รอบ 32 ทีม' },
-    { key: 'r16', short: '16 ทีม', title: '⚔️ รอบ 16 ทีม' },
-    { key: 'qf', short: '8 ทีม', title: '🥊 รอบ 8 ทีม' },
+    { key: 'final', short: 'ชิงฯ', title: '🏆 ชิงชนะเลิศ' },
     { key: 'sf', short: '4 ทีม', title: '🔥 รอบรองฯ' },
-    { key: 'final', short: 'ชิงฯ', title: '🏆 ชิงชนะเลิศ' }
+    { key: 'qf', short: '8 ทีม', title: '🥊 รอบ 8 ทีม' },
+    { key: 'r16', short: '16 ทีม', title: '⚔️ รอบ 16 ทีม' },
+    { key: 'r32', short: '32 ทีม', title: '🏟️ รอบ 32 ทีม' }
   ];
   const present = ROUNDS.filter(r => (ko[r.key] || []).length);
   if (!present.length) { el.innerHTML = '<div class="ko-legend">ยังไม่มีข้อมูลสายน็อกเอาต์</div>'; return; }
