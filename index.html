@@ -94,6 +94,12 @@
     padding: 2px 1px;
     line-height: 1.15;
   }
+  .tabs button[hidden] { display: none; }
+  .rank-pos { display: inline-flex; align-items: center; gap: 6px; background: var(--card-2); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px 4px 4px; font-size: .82rem; }
+  .rank-pos .rp-n { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 6px; font-size: .74rem; font-weight: 800; background: linear-gradient(180deg, var(--gold-2), var(--gold)); color: #2a1c04; }
+  .rank-pos.hit { border-color: rgba(70,217,143,.55); background: var(--green-bg); color: var(--green); }
+  .rank-pos.miss { border-color: rgba(255,107,122,.5); background: var(--red-bg); color: var(--red); }
+  .rank-pos.hit .rp-n, .rank-pos.miss .rp-n { background: currentColor; color: #10121a; }
   .tabs button[aria-selected="true"] {
     background: linear-gradient(180deg, var(--gold-2), var(--gold) 60%, #d9a12b);
     color: #2a1c04;
@@ -186,6 +192,7 @@
     font-weight: 700;
     font-variant-numeric: tabular-nums;
   }
+  .big-card .hits.bad { background: var(--red-bg); color: var(--red); }
   .big-card .teams { margin-top: 9px; display: flex; flex-wrap: wrap; gap: 6px; }
   .team-chip {
     background: var(--blue-bg);
@@ -505,14 +512,15 @@
 <div class="container">
   <header>
     <h1>🏆 บอร์ดทายผลลุ้นยาขมของกลุ่ม — FIFA World Cup 2026</h1>
-    <p>ทายผลใหญ่ (4 ทีมเข้ารอบรองฯ) และทายผลรายวัน (ผลหลังบวกแต้มต่อ: แพ้ / เสมอ / ชนะ)</p>
+    <p>ทายอันดับ 4 ทีมสุดท้าย · ทายผลรายวัน (ผลหลังบวกแต้มต่อ: แพ้ / เสมอ / ชนะ) · ลุ้นยาขม</p>
   </header>
 
   <p class="live-status" id="live-status" aria-live="polite"></p>
 
   <div class="tabs" role="tablist" aria-label="หมวดการทายผล">
     <button id="tab-ko" role="tab" aria-selected="false" aria-controls="sec-ko">🏟️ น็อกเอาต์</button>
-    <button id="tab-big" role="tab" aria-selected="true" aria-controls="sec-big">🏆 ทายผลใหญ่</button>
+    <button id="tab-big" role="tab" aria-selected="false" aria-controls="sec-big" hidden>🏆 ทายผลใหญ่</button>
+    <button id="tab-rank" role="tab" aria-selected="true" aria-controls="sec-rank">🏅 ทายอันดับ</button>
     <button id="tab-daily" role="tab" aria-selected="false" aria-controls="sec-daily">📅 รายวัน</button>
     <button id="tab-board" role="tab" aria-selected="false" aria-controls="sec-board">📊 คะแนน</button>
     <button id="tab-yakhom" role="tab" aria-selected="false" aria-controls="sec-yakhom">🍵 ยาขม</button>
@@ -525,8 +533,15 @@
     <div id="ko-bracket"></div>
   </section>
 
-  <!-- ============ ทายผลใหญ่ ============ -->
-  <section id="sec-big" class="active" role="tabpanel" aria-labelledby="tab-big">
+  <!-- ============ ทายอันดับ 4 ทีมสุดท้าย (แทงใหญ่รอบ 2) ============ -->
+  <section id="sec-rank" class="active" role="tabpanel" aria-labelledby="tab-rank">
+    <div class="big-rule">🏅 <b>กติกาทายอันดับ 4 ทีมสุดท้าย</b> — เรียงลำดับ <b>1-4</b> ว่าแต่ละทีมจบอันดับเท่าไหร่ (ห้ามซ้ำทีม) · <b>ถูก 3-4 ตำแหน่ง → รอด</b> · ถูก 2 → 2 ซอง · ถูก 1 → 3 ซอง · ถูก 0 → 4 ซอง · ปิดแทง 18:00 · บอลจบแล้วมีเวลาใช้หนี้อีก 3 วัน</div>
+    <div class="semis-banner" id="rank-actual"></div>
+    <div class="big-grid" id="rank-grid"></div>
+  </section>
+
+  <!-- ============ ทายผลใหญ่ (จบแล้ว — ซ่อนแท็บ) ============ -->
+  <section id="sec-big" role="tabpanel" aria-labelledby="tab-big">
     <div class="big-rule">🏆 <b>กติกาทายผลใหญ่</b> — เลือก <b>4 ทีม</b> ที่คิดว่าจะเข้า <b>รอบ 4 ทีมสุดท้าย</b> · ถ้าทีมที่เลือกตกรอบก่อนถึงรอบรองฯ โดนยาขมตามรอบที่ตก (ในวันที่ทีมนั้นตกรอบ): <b>ตกรอบแบ่งกลุ่ม → 4 ซอง</b> · <b>ตกรอบ 32 ทีม → 3 ซอง</b> · <b>ตกรอบ 16 ทีม → 2 ซอง</b> · <b>ตกรอบ 8 ทีม → 1 ซอง</b> · เข้าถึงรอบ 4 ทีมสุดท้าย = รอด</div>
     <div class="semis-banner" id="semis-banner"></div>
     <div class="standings-note" id="standings-note" hidden></div>
@@ -585,7 +600,7 @@
 // ข้อมูลบอร์ดอยู่ใน board-data.json — แก้ข้อมูล/ผลที่ไฟล์นั้น
 // ============================================================
 
-let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [], YAKHOM = [], YAKHOM_PAID = [], ANGEL = [], ANGEL_USED = [], ANGEL_FORFEITED = [], KHUNPHRA = [], KHUNPHRA_USED = [], KHUNPHRA_FORFEITED = [], JADTEM = [], JADTEM_USED = [], JADTEMKILL = [], JADTEMKILL_USED = [], BUNLON = [], BUNLON_USED = [], BUNLON_FORFEITED = [], KNOCKOUT = {}, KO_ELIM = {};
+let PEOPLE = [], BIG_BETS = {}, SEMIS_ACTUAL = [], DAILY = [], YAKHOM = [], YAKHOM_PAID = [], ANGEL = [], ANGEL_USED = [], ANGEL_FORFEITED = [], KHUNPHRA = [], KHUNPHRA_USED = [], KHUNPHRA_FORFEITED = [], JADTEM = [], JADTEM_USED = [], JADTEMKILL = [], JADTEMKILL_USED = [], BUNLON = [], BUNLON_USED = [], BUNLON_FORFEITED = [], KNOCKOUT = {}, KO_ELIM = {}, RANK_BET = {};
 
 async function loadData() {
   const res = await fetch('./board-data.json', { cache: 'no-cache' });
@@ -611,6 +626,7 @@ async function loadData() {
   BUNLON_USED = d.bunlonUsed || [];
   BUNLON_FORFEITED = d.bunlonForfeited || [];
   KNOCKOUT = d.knockout || {};
+  RANK_BET = d.rankBet || { teams: [], actual: [], picks: {} };
   KO_ELIM = knockoutElim();
 }
 
@@ -814,7 +830,7 @@ function matchResult(m, favScore, dogScore) {
 }
 
 // ---------- Tabs ----------
-const TABS = ['ko', 'big', 'daily', 'board', 'yakhom'];
+const TABS = ['ko', 'rank', 'daily', 'board', 'yakhom'];
 
 function showTab(t, updateHash = true) {
   TABS.forEach(x => {
@@ -915,6 +931,32 @@ function renderBig() {
   document.getElementById('vt-person').setAttribute('aria-pressed', String(bigView === 'person'));
   document.getElementById('vt-team').setAttribute('aria-pressed', String(bigView === 'team'));
   document.getElementById('big-grid').innerHTML = bigView === 'person' ? bigByPerson() : bigByTeam();
+}
+
+// ทายอันดับ 4 ทีมสุดท้าย (แทงใหญ่รอบ 2): เรียง 1-4 ห้ามซ้ำ · ถูก 3-4 รอด · 2→2 · 1→3 · 0→4 ซอง
+function renderRank() {
+  const rb = RANK_BET || {};
+  const teams = rb.teams || [];
+  const actual = rb.actual || [];
+  const known = teams.length > 0 && actual.length === teams.length;
+  document.getElementById('rank-actual').innerHTML = known
+    ? '🏁 อันดับจริง: ' + actual.map((t, i) => '<b>' + (i + 1) + '. ' + esc(t) + '</b>').join(' &nbsp; ')
+    : '🏁 อันดับจริง 4 ทีมสุดท้าย: <span class="pending">ยังไม่รู้ผล — รอจบรอบรองฯ · ชิงที่ 3 · ชิงชนะเลิศ</span>';
+  const tierTxt = c => c >= 3 ? 'รอด' : c === 2 ? 'โดน 2 ซอง' : c === 1 ? 'โดน 3 ซอง' : 'โดน 4 ซอง';
+  document.getElementById('rank-grid').innerHTML = PEOPLE.map(p => {
+    const picks = (rb.picks || {})[p];
+    if (!picks || !picks.length) return '';
+    let correct = 0;
+    const chips = picks.map((t, i) => {
+      const hit = known && actual[i] === t, miss = known && actual[i] !== t;
+      if (hit) correct++;
+      return '<span class="rank-pos' + (hit ? ' hit' : (miss ? ' miss' : '')) + '"><span class="rp-n">' + (i + 1) + '</span>' + esc(t) + '</span>';
+    }).join('');
+    return '<div class="big-card">' +
+      '<div class="name"><span class="pname" role="button" tabindex="0" data-person="' + esc(p) + '" aria-label="ดูข้อมูล ' + esc(p) + '" translate="no">' + esc(p) + '</span>' +
+      (known ? '<span class="hits' + (correct >= 3 ? '' : ' bad') + '">ถูก ' + correct + '/4 · ' + tierTxt(correct) + '</span>' : '') +
+      '</div><div class="teams">' + chips + '</div></div>';
+  }).join('');
 }
 
 // สรุปรอบแบ่งกลุ่ม: ทีมในโพยใหญ่ที่ "ตกรอบแล้ว" (จาก ESPN) — โพยใหญ่คือทายเข้ารอบรองฯ
@@ -1060,14 +1102,18 @@ function openPerson(p) {
   personModal.hidden = false;
 }
 function closePerson() { personModal.hidden = true; }
-document.getElementById('big-grid').addEventListener('click', ev => {
-  const el = ev.target.closest('[data-person]');
-  if (el) openPerson(el.dataset.person);
-});
-document.getElementById('big-grid').addEventListener('keydown', ev => {
-  if (ev.key !== 'Enter' && ev.key !== ' ') return;
-  const el = ev.target.closest('[data-person]');
-  if (el) { ev.preventDefault(); openPerson(el.dataset.person); }
+['big-grid', 'rank-grid'].forEach(id => {
+  const g = document.getElementById(id);
+  if (!g) return;
+  g.addEventListener('click', ev => {
+    const el = ev.target.closest('[data-person]');
+    if (el) openPerson(el.dataset.person);
+  });
+  g.addEventListener('keydown', ev => {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    const el = ev.target.closest('[data-person]');
+    if (el) { ev.preventDefault(); openPerson(el.dataset.person); }
+  });
 });
 document.getElementById('pm-close').addEventListener('click', closePerson);
 personModal.addEventListener('click', ev => { if (ev.target === personModal) closePerson(); });
@@ -1548,6 +1594,7 @@ function renderKnockout() {
   }
   renderKnockout();
   renderBig();
+  renderRank();
   renderDaily();
   renderBoard();
   renderYakhom();
