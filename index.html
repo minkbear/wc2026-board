@@ -174,6 +174,25 @@
   .team-chip .chip-info { display: none; }
   .team-chip.open { display: inline-block; text-decoration: none; }
   .team-chip.open .chip-info { display: block; margin-top: 3px; font-size: .72rem; font-weight: 400; opacity: .9; text-decoration: none; white-space: normal; }
+  .big-card .name .pname { cursor: pointer; text-decoration: underline dotted var(--muted); text-underline-offset: 3px; border-radius: 4px; }
+  .big-card .name .pname:hover, .big-card .name .pname:focus-visible { color: var(--accent); text-decoration-color: var(--accent); outline: none; }
+  .pick-chip[data-person] { cursor: pointer; }
+  .pick-chip[data-person]:hover, .pick-chip[data-person]:focus-visible { border-color: var(--accent); outline: none; }
+  /* person popup */
+  .pm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.62); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 100; }
+  .pm-overlay[hidden] { display: none; }
+  .pm-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); max-width: 440px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 18px; box-shadow: 0 14px 44px rgba(0,0,0,.55); }
+  .pm-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+  .pm-head h3 { font-size: 1.15rem; }
+  .pm-close { background: var(--card-2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; width: 32px; height: 32px; cursor: pointer; font-size: 1rem; line-height: 1; flex-shrink: 0; }
+  .pm-close:hover { border-color: var(--accent); }
+  .pm-sec { margin-bottom: 15px; }
+  .pm-sec:last-child { margin-bottom: 0; }
+  .pm-label { font-size: .78rem; color: var(--muted); font-weight: 700; margin-bottom: 7px; }
+  .pm-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pm-stat { display: flex; flex-wrap: wrap; gap: 7px 18px; font-size: .9rem; }
+  .pm-stat b { font-variant-numeric: tabular-nums; color: var(--text); }
+  .pm-card-chip { background: var(--card-2); border: 1px solid var(--border); border-radius: 8px; padding: 4px 11px; font-size: .84rem; }
   .big-rule { background: var(--purple-bg); border: 1px solid var(--border); border-left: 3px solid var(--purple); border-radius: var(--radius); padding: 10px 13px; margin-bottom: 12px; font-size: .84rem; line-height: 1.6; }
   .big-rule b { color: var(--purple); }
   .standings-note { background: var(--card-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 12px; font-size: .85rem; line-height: 1.6; }
@@ -513,6 +532,13 @@
   <footer>บอร์ดแสดงผลอย่างเดียว — อัปเดตข้อมูล/ผลบอลโดยแก้ไขไฟล์ board-data.json</footer>
 </div>
 
+<div class="pm-overlay" id="person-modal" hidden role="dialog" aria-modal="true" aria-labelledby="pm-title">
+  <div class="pm-box">
+    <div class="pm-head"><h3 id="pm-title" translate="no"></h3><button class="pm-close" id="pm-close" aria-label="ปิด">✕</button></div>
+    <div id="pm-body"></div>
+  </div>
+</div>
+
 <script>
 // ============================================================
 // ข้อมูลบอร์ดอยู่ใน board-data.json — แก้ข้อมูล/ผลที่ไฟล์นั้น
@@ -815,7 +841,7 @@ function bigByPerson() {
       teamsHtml = '<div class="empty">ยังไม่ส่งโพย</div>';
     }
     return '<div class="big-card">' +
-      '<div class="name"><span translate="no">' + esc(p) + '</span>' +
+      '<div class="name"><span class="pname" role="button" tabindex="0" data-person="' + esc(p) + '" aria-label="ดูข้อมูล ' + esc(p) + '" translate="no">' + esc(p) + '</span>' +
       (SEMIS_ACTUAL.length && b.teams.length ? '<span class="hits">ถูก ' + hits + '/4</span>' : '') +
       '</div>' + teamsHtml + '</div>';
   }).join('');
@@ -833,7 +859,7 @@ function bigByTeam() {
       '<div class="name"><span>' + teamChip(team) + '</span>' +
       '<span class="hits">' + people.length + ' คน</span></div>' +
       '<div class="teams">' + people.map(p =>
-        '<span class="pick-chip" translate="no">' + esc(p) + '</span>'
+        '<span class="pick-chip" role="button" tabindex="0" data-person="' + esc(p) + '" aria-label="ดูข้อมูล ' + esc(p) + '" translate="no">' + esc(p) + '</span>'
       ).join('') + '</div>' +
       '</div>'
     ).join('');
@@ -878,6 +904,74 @@ function renderStandingsNote() {
 
 document.getElementById('vt-person').addEventListener('click', () => { bigView = 'person'; renderBig(); });
 document.getElementById('vt-team').addEventListener('click', () => { bigView = 'team'; renderBig(); });
+
+// ---------- popup ข้อมูลบุคคล (กดชื่อคนในแท็บทายผลใหญ่) ----------
+function personStats(p) {
+  const got = YAKHOM.reduce((a, y) => a + (y.sachets[p] || 0), 0);
+  const paid = YAKHOM_PAID.reduce((a, e) => a + (e.payments[p] || 0), 0);
+  const aUsed = ANGEL_USED.reduce((a, e) => a + (e.uses[p] || 0), 0);
+  const kUsed = KHUNPHRA_USED.reduce((a, e) => a + (e.uses[p] || 0), 0);
+  const blUsed = BUNLON_USED.reduce((a, e) => a + (e.uses[p] || 0), 0);
+  const cleared = Math.min(paid + aUsed + kUsed + blUsed, got);
+  const held = (earned, used, forf) => {
+    const e = earned.reduce((a, x) => a + x.names.filter(n => n === p).length, 0);
+    const u = (used || []).reduce((a, x) => a + ((x.uses || {})[p] || 0), 0);
+    const f = (forf || []).reduce((a, x) => a + ((x.forfeits || {})[p] || 0), 0);
+    return Math.max(e - u - f, 0);
+  };
+  return {
+    got, paid, aUsed, kUsed, blUsed, cleared, owe: got - cleared,
+    bunlon: held(BUNLON, BUNLON_USED, BUNLON_FORFEITED),
+    jadtem: held(JADTEM, JADTEM_USED, null),
+    jadtemKill: held(JADTEMKILL, JADTEMKILL_USED, null)
+  };
+}
+function personInfoHtml(p) {
+  const b = BIG_BETS[p] || { teams: [] };
+  const s = personStats(p);
+  const hits = b.teams.filter(t => SEMIS_ACTUAL.includes(t)).length;
+  const teamsHtml = b.teams.length
+    ? '<div class="pm-row">' + b.teams.map(teamChip).join('') + '</div>' + (b.orig ? '<div class="orig">ตามโพย: ' + esc(b.orig) + '</div>' : '')
+    : '<div class="empty">ยังไม่ส่งโพย</div>';
+  const paidDetail = (s.paid > 0 || s.aUsed > 0 || s.kUsed > 0 || s.blUsed > 0)
+    ? [s.paid > 0 ? '💵×' + s.paid : null, s.aUsed > 0 ? '🃏×' + s.aUsed : null, s.kUsed > 0 ? '🪄×' + s.kUsed : null, s.blUsed > 0 ? '🎁×' + s.blUsed : null].filter(Boolean).join(' ')
+    : '—';
+  const heldChips = [];
+  if (s.bunlon > 0) heldChips.push('🎁 บุญล้น ×' + s.bunlon);
+  if (s.jadtem > 0) heldChips.push('⚡ จัดเต็ม ×' + s.jadtem);
+  if (s.jadtemKill > 0) heldChips.push('🔪 ฆ่าจัดเต็ม ×' + s.jadtemKill);
+  const heldHtml = heldChips.length
+    ? '<div class="pm-row">' + heldChips.map(c => '<span class="pm-card-chip">' + c + '</span>').join('') + '</div>'
+    : '<div class="empty">— ไม่มีบัตรถืออยู่ —</div>';
+  return '<div class="pm-sec"><div class="pm-label">🏆 โพยใหญ่ (ทายเข้ารอบรองฯ)' +
+      (SEMIS_ACTUAL.length && b.teams.length ? ' — ถูก ' + hits + '/4' : '') + '</div>' + teamsHtml + '</div>' +
+    '<div class="pm-sec"><div class="pm-label">🍵 ยาขม</div><div class="pm-stat">' +
+      '<span>โดน <b>' + s.got + '</b> ซอง</span>' +
+      '<span>ใช้หนี้แล้ว <b>' + esc(paidDetail) + '</b></span>' +
+      '<span>คงเหลือ <b>' + (s.owe > 0 ? '×' + s.owe : (s.got > 0 ? 'ครบ ✅' : '0')) + '</b></span>' +
+    '</div></div>' +
+    '<div class="pm-sec"><div class="pm-label">🃏 บัตรที่ถืออยู่</div>' + heldHtml + '</div>';
+}
+const personModal = document.getElementById('person-modal');
+function openPerson(p) {
+  if (!PEOPLE.includes(p)) return;
+  document.getElementById('pm-title').textContent = p;
+  document.getElementById('pm-body').innerHTML = personInfoHtml(p);
+  personModal.hidden = false;
+}
+function closePerson() { personModal.hidden = true; }
+document.getElementById('big-grid').addEventListener('click', ev => {
+  const el = ev.target.closest('[data-person]');
+  if (el) openPerson(el.dataset.person);
+});
+document.getElementById('big-grid').addEventListener('keydown', ev => {
+  if (ev.key !== 'Enter' && ev.key !== ' ') return;
+  const el = ev.target.closest('[data-person]');
+  if (el) { ev.preventDefault(); openPerson(el.dataset.person); }
+});
+document.getElementById('pm-close').addEventListener('click', closePerson);
+personModal.addEventListener('click', ev => { if (ev.target === personModal) closePerson(); });
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !personModal.hidden) closePerson(); });
 
 // แตะ/คลิกชิปทีมเพื่อกางรายละเอียดรอบแบ่งกลุ่ม (มือถือใช้ได้ — ไม่พึ่ง hover) เปิดได้ทีละชิป
 function toggleChip(chip) {
