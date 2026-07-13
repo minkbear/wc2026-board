@@ -223,6 +223,17 @@
   .pm-stat b { font-variant-numeric: tabular-nums; color: var(--text); }
   .pm-sub { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
   .pm-card-chip { background: linear-gradient(180deg, rgba(244,199,74,.10), var(--card-2)); border: 1px solid rgba(244,199,74,.35); border-radius: 8px; padding: 4px 11px; font-size: .84rem; box-shadow: 0 0 10px rgba(244,199,74,.12); }
+  .pm-rank-wrap { text-align: center; margin-bottom: 14px; }
+  .pm-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+  .pm-tile { background: linear-gradient(180deg, rgba(194,151,255,.12), var(--card-2)); border: 1px solid var(--border); border-radius: 12px; padding: 12px 5px 10px; text-align: center; box-shadow: inset 0 1px 0 rgba(255,255,255,.04); }
+  .pm-tile.ok { border-color: rgba(70,217,143,.45); background: linear-gradient(180deg, var(--green-bg), var(--card-2)); }
+  .pm-tile.danger { border-color: rgba(255,107,122,.45); background: linear-gradient(180deg, var(--red-bg), var(--card-2)); }
+  .pm-tile-num { font-size: 1.45rem; font-weight: 900; line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--gold-2); }
+  .pm-tile.ok .pm-tile-num { color: var(--green); }
+  .pm-tile.danger .pm-tile-num { color: var(--red); }
+  .pm-tile-lbl { font-size: .68rem; font-weight: 700; color: var(--text); margin-top: 5px; white-space: nowrap; }
+  .pm-tile-sub { font-size: .64rem; color: var(--muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .pm-forf { margin-top: 8px; font-size: .76rem; color: var(--muted); }
   .big-rule { background: var(--purple-bg); border: 1px solid var(--border); border-left: 3px solid var(--purple); border-radius: var(--radius); padding: 10px 13px; margin-bottom: 12px; font-size: .84rem; line-height: 1.6; }
   .big-rule b { color: var(--purple); }
   .standings-note { background: var(--card-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 12px; font-size: .85rem; line-height: 1.6; }
@@ -1000,9 +1011,6 @@ function personInfoHtml(p) {
   const teamsHtml = b.teams.length
     ? '<div class="pm-row">' + b.teams.map(teamChip).join('') + '</div>' + (b.orig ? '<div class="orig">ตามโพย: ' + esc(b.orig) + '</div>' : '')
     : '<div class="empty">ยังไม่ส่งโพย</div>';
-  const paidDetail = (s.paidReal > 0 || s.aUsed > 0 || s.kUsed > 0 || s.blUsed > 0)
-    ? [s.paidReal > 0 ? '💵×' + s.paidReal : null, s.aUsed > 0 ? '🃏×' + s.aUsed : null, s.kUsed > 0 ? '🪄×' + s.kUsed : null, s.blUsed > 0 ? '🎁×' + s.blUsed : null].filter(Boolean).join(' ')
-    : '—';
   const heldChips = [];
   if (s.bunlon > 0) heldChips.push('🎁 บุญล้น ×' + s.bunlon);
   if (s.jadtem > 0) heldChips.push('⚡ จัดเต็ม ×' + s.jadtem);
@@ -1017,20 +1025,28 @@ function personInfoHtml(p) {
   const forfHtml = forfChips.length
     ? '<div class="pm-row">' + forfChips.map(c => '<span class="pm-card-chip">' + c + '</span>').join('') + '</div>'
     : '<div class="empty">— ไม่เคยถูกริบ —</div>';
-  return '<div class="pm-sec" style="margin-bottom:12px"><span class="pm-rank">⭐ ระดับ: ' + rank + '</span></div>' +
-    '<div class="pm-sec"><div class="pm-label">🏆 โพยใหญ่ (ทายเข้ารอบรองฯ)' +
-      (SEMIS_ACTUAL.length && b.teams.length ? ' — ถูก ' + hits + '/4' : '') + '</div>' + teamsHtml + '</div>' +
-    '<div class="pm-sec"><div class="pm-label">📊 สถิติทายผล (รายข้อ · ไม่รวมคู่โบนัส)</div><div class="pm-stat">' +
-      '<span>อัตราถูก <b>' + pct(acc.correct, acc.total) + '</b>' + (acc.total ? ' <span class="pm-sub">(' + acc.correct + '/' + acc.total + ')</span>' : '') + '</span>' +
-      '<span>10 นัดล่าสุด <b>' + pct(acc.l10correct, acc.l10n) + '</b>' + (acc.l10n ? ' <span class="pm-sub">(' + acc.l10correct + '/' + acc.l10n + ')</span>' : '') + '</span>' +
-    '</div></div>' +
-    '<div class="pm-sec"><div class="pm-label">🍵 ยาขม (ไม่นับที่ยก)</div><div class="pm-stat">' +
-      '<span>โดน <b>' + s.gotNet + '</b> ซอง' + (s.waived > 0 ? ' <span class="pm-sub">(ยก ' + s.waived + ')</span>' : '') + '</span>' +
-      '<span>ใช้หนี้แล้ว <b>' + esc(paidDetail) + '</b></span>' +
-      '<span>คงเหลือ <b>' + (s.owe > 0 ? '×' + s.owe : (s.gotNet > 0 ? 'ครบ ✅' : '0')) + '</b></span>' +
-    '</div></div>' +
-    '<div class="pm-sec"><div class="pm-label">🃏 บัตรที่ถืออยู่</div>' + heldHtml + '</div>' +
-    '<div class="pm-sec"><div class="pm-label">🚫 บัตรที่ถูกริบ</div>' + forfHtml + '</div>';
+  // KPI 3 ช่อง: อัตราถูก · ฟอร์ม 10 นัด · หนี้คงเหลือ
+  const oweTile = s.owe > 0
+    ? { cls: ' danger', num: '×' + s.owe, sub: 'โดน ' + s.gotNet + ' ซอง' }
+    : (s.gotNet > 0 ? { cls: ' ok', num: 'ครบ', sub: 'เคลียร์หมด ✅' } : { cls: '', num: '0', sub: 'ยังไม่โดน' });
+  const tile = (num, lbl, sub, cls) =>
+    '<div class="pm-tile' + (cls || '') + '"><div class="pm-tile-num">' + num + '</div><div class="pm-tile-lbl">' + lbl + '</div><div class="pm-tile-sub">' + (sub || '&nbsp;') + '</div></div>';
+  const tiles = '<div class="pm-tiles">' +
+    tile(pct(acc.correct, acc.total), '🎯 อัตราถูก', acc.total ? acc.correct + '/' + acc.total : 'ยังไม่มีผล') +
+    tile(pct(acc.l10correct, acc.l10n), '🔥 10 นัดล่าสุด', acc.l10n ? acc.l10correct + '/' + acc.l10n : '—') +
+    tile(oweTile.num, '🍵 หนี้คงเหลือ', oweTile.sub, oweTile.cls) +
+  '</div>';
+  const cardSec = '<div class="pm-sec"><div class="pm-label">🃏 คลังบัตร</div>' +
+    (heldChips.length
+      ? '<div class="pm-row">' + heldChips.map(c => '<span class="pm-card-chip">' + c + '</span>').join('') + '</div>'
+      : '<div class="empty">— ไม่มีบัตรถืออยู่ —</div>') +
+    (forfChips.length ? '<div class="pm-forf">🚫 เคยถูกริบ: ' + forfChips.join(' · ') + '</div>' : '') +
+    '</div>';
+  return '<div class="pm-rank-wrap"><span class="pm-rank">⭐ ' + rank + '</span></div>' +
+    tiles +
+    '<div class="pm-sec"><div class="pm-label">🏆 โพยใหญ่' +
+      (SEMIS_ACTUAL.length && b.teams.length ? ' · ถูก ' + hits + '/4' : '') + '</div>' + teamsHtml + '</div>' +
+    cardSec;
 }
 const personModal = document.getElementById('person-modal');
 function openPerson(p) {
