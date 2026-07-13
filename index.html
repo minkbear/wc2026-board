@@ -910,21 +910,24 @@ document.getElementById('vt-team').addEventListener('click', () => { bigView = '
 function personStats(p) {
   const got = YAKHOM.reduce((a, y) => a + (y.sachets[p] || 0), 0);
   const paid = YAKHOM_PAID.reduce((a, e) => a + (e.payments[p] || 0), 0);
+  const waived = YAKHOM_PAID.reduce((a, e) => a + ((e.waived || {})[p] || 0), 0);   // "ยก" ไม่ได้กินจริง — ไม่นับเป็นโดน/จ่ายจริง
   const aUsed = ANGEL_USED.reduce((a, e) => a + (e.uses[p] || 0), 0);
   const kUsed = KHUNPHRA_USED.reduce((a, e) => a + (e.uses[p] || 0), 0);
   const blUsed = BUNLON_USED.reduce((a, e) => a + (e.uses[p] || 0), 0);
   const cleared = Math.min(paid + aUsed + kUsed + blUsed, got);
-  const held = (earned, used, forf) => {
+  const forf = log => (log || []).reduce((a, x) => a + ((x.forfeits || {})[p] || 0), 0);
+  const held = (earned, used, forfLog) => {
     const e = earned.reduce((a, x) => a + x.names.filter(n => n === p).length, 0);
     const u = (used || []).reduce((a, x) => a + ((x.uses || {})[p] || 0), 0);
-    const f = (forf || []).reduce((a, x) => a + ((x.forfeits || {})[p] || 0), 0);
-    return Math.max(e - u - f, 0);
+    return Math.max(e - u - forf(forfLog), 0);
   };
   return {
-    got, paid, aUsed, kUsed, blUsed, cleared, owe: got - cleared,
+    got, paid, waived, aUsed, kUsed, blUsed, cleared, owe: got - cleared,
+    gotNet: got - waived, paidReal: paid - waived,
     bunlon: held(BUNLON, BUNLON_USED, BUNLON_FORFEITED),
     jadtem: held(JADTEM, JADTEM_USED, null),
-    jadtemKill: held(JADTEMKILL, JADTEMKILL_USED, null)
+    jadtemKill: held(JADTEMKILL, JADTEMKILL_USED, null),
+    angelForf: forf(ANGEL_FORFEITED), kpForf: forf(KHUNPHRA_FORFEITED), blForf: forf(BUNLON_FORFEITED)
   };
 }
 // ผลรายคู่สำหรับสถิติ: manner ใช้ m.outcome, ที่เหลือใช้สกอร์ที่จบแล้ว
@@ -962,8 +965,8 @@ function personInfoHtml(p) {
   const teamsHtml = b.teams.length
     ? '<div class="pm-row">' + b.teams.map(teamChip).join('') + '</div>' + (b.orig ? '<div class="orig">ตามโพย: ' + esc(b.orig) + '</div>' : '')
     : '<div class="empty">ยังไม่ส่งโพย</div>';
-  const paidDetail = (s.paid > 0 || s.aUsed > 0 || s.kUsed > 0 || s.blUsed > 0)
-    ? [s.paid > 0 ? '💵×' + s.paid : null, s.aUsed > 0 ? '🃏×' + s.aUsed : null, s.kUsed > 0 ? '🪄×' + s.kUsed : null, s.blUsed > 0 ? '🎁×' + s.blUsed : null].filter(Boolean).join(' ')
+  const paidDetail = (s.paidReal > 0 || s.aUsed > 0 || s.kUsed > 0 || s.blUsed > 0)
+    ? [s.paidReal > 0 ? '💵×' + s.paidReal : null, s.aUsed > 0 ? '🃏×' + s.aUsed : null, s.kUsed > 0 ? '🪄×' + s.kUsed : null, s.blUsed > 0 ? '🎁×' + s.blUsed : null].filter(Boolean).join(' ')
     : '—';
   const heldChips = [];
   if (s.bunlon > 0) heldChips.push('🎁 บุญล้น ×' + s.bunlon);
@@ -972,18 +975,26 @@ function personInfoHtml(p) {
   const heldHtml = heldChips.length
     ? '<div class="pm-row">' + heldChips.map(c => '<span class="pm-card-chip">' + c + '</span>').join('') + '</div>'
     : '<div class="empty">— ไม่มีบัตรถืออยู่ —</div>';
+  const forfChips = [];
+  if (s.angelForf > 0) forfChips.push('🃏 นางฟ้า ×' + s.angelForf);
+  if (s.kpForf > 0) forfChips.push('🪄 คุณพระ ×' + s.kpForf);
+  if (s.blForf > 0) forfChips.push('🎁 บุญล้น ×' + s.blForf);
+  const forfHtml = forfChips.length
+    ? '<div class="pm-row">' + forfChips.map(c => '<span class="pm-card-chip">' + c + '</span>').join('') + '</div>'
+    : '<div class="empty">— ไม่เคยถูกริบ —</div>';
   return '<div class="pm-sec"><div class="pm-label">🏆 โพยใหญ่ (ทายเข้ารอบรองฯ)' +
       (SEMIS_ACTUAL.length && b.teams.length ? ' — ถูก ' + hits + '/4' : '') + '</div>' + teamsHtml + '</div>' +
     '<div class="pm-sec"><div class="pm-label">📊 สถิติทายผล (รายข้อ · ไม่รวมคู่โบนัส)</div><div class="pm-stat">' +
       '<span>อัตราถูก <b>' + pct(acc.correct, acc.total) + '</b>' + (acc.total ? ' <span class="pm-sub">(' + acc.correct + '/' + acc.total + ')</span>' : '') + '</span>' +
       '<span>10 นัดล่าสุด <b>' + pct(acc.l10correct, acc.l10n) + '</b>' + (acc.l10n ? ' <span class="pm-sub">(' + acc.l10correct + '/' + acc.l10n + ')</span>' : '') + '</span>' +
     '</div></div>' +
-    '<div class="pm-sec"><div class="pm-label">🍵 ยาขม</div><div class="pm-stat">' +
-      '<span>โดน <b>' + s.got + '</b> ซอง</span>' +
+    '<div class="pm-sec"><div class="pm-label">🍵 ยาขม (ไม่นับที่ยก)</div><div class="pm-stat">' +
+      '<span>โดน <b>' + s.gotNet + '</b> ซอง' + (s.waived > 0 ? ' <span class="pm-sub">(ยก ' + s.waived + ')</span>' : '') + '</span>' +
       '<span>ใช้หนี้แล้ว <b>' + esc(paidDetail) + '</b></span>' +
-      '<span>คงเหลือ <b>' + (s.owe > 0 ? '×' + s.owe : (s.got > 0 ? 'ครบ ✅' : '0')) + '</b></span>' +
+      '<span>คงเหลือ <b>' + (s.owe > 0 ? '×' + s.owe : (s.gotNet > 0 ? 'ครบ ✅' : '0')) + '</b></span>' +
     '</div></div>' +
-    '<div class="pm-sec"><div class="pm-label">🃏 บัตรที่ถืออยู่</div>' + heldHtml + '</div>';
+    '<div class="pm-sec"><div class="pm-label">🃏 บัตรที่ถืออยู่</div>' + heldHtml + '</div>' +
+    '<div class="pm-sec"><div class="pm-label">🚫 บัตรที่ถูกริบ</div>' + forfHtml + '</div>';
 }
 const personModal = document.getElementById('person-modal');
 function openPerson(p) {
@@ -1122,9 +1133,11 @@ function renderYakhom() {
   const counts = {};
   YAKHOM.forEach(y => Object.entries(y.sachets).forEach(([n, c]) => { counts[n] = (counts[n] || 0) + c; }));
 
-  // รวมยอดใช้หนี้ต่อคนจาก log รายวัน
+  // รวมยอดใช้หนี้ต่อคนจาก log รายวัน + ยอดที่ "ยก" (ไม่ได้กินจริง — ไม่นับเป็นโดน/จ่ายจริง)
   const paidTotals = {};
   YAKHOM_PAID.forEach(e => Object.entries(e.payments).forEach(([n, c]) => { paidTotals[n] = (paidTotals[n] || 0) + c; }));
+  const waivedTotals = {};
+  YAKHOM_PAID.forEach(e => Object.entries(e.waived || {}).forEach(([n, c]) => { waivedTotals[n] = (waivedTotals[n] || 0) + c; }));
 
   // บัตรนางฟ้า: ได้มา − ใช้ไป (ล้างหนี้) − ถูกริบ = ถือไว้
   const cardEarned = {};
@@ -1169,6 +1182,7 @@ function renderYakhom() {
     .map(p => {
       const got = counts[p] || 0;
       const paid = paidTotals[p] || 0;
+      const waived = waivedTotals[p] || 0;   // "ยก" — ตัดออกจากทั้งโดนและจ่ายจริง (คงเหลือเท่าเดิม)
       const used = cardUsed[p] || 0;       // บัตรนางฟ้าที่ใช้ (รอบกลุ่ม)
       const kused = kpUsed[p] || 0;        // บัตรคุณพระที่ใช้ (รอบ 32)
       const bused = blUsed[p] || 0;        // บัตรบุญล้นที่ใช้ (รอบ 8 ทีม)
@@ -1178,7 +1192,7 @@ function renderYakhom() {
       const bcards = Math.max((blEarned[p] || 0) - bused - (blForfeited[p] || 0), 0);
       const jcards = Math.max((jtEarned[p] || 0) - (jtUsed[p] || 0), 0);
       const jkcards = Math.max((jkEarned[p] || 0) - (jkUsed[p] || 0), 0);
-      return { p, got, paid, used, kused, bused, owe: got - cleared, cards, kcards, bcards, jcards, jkcards };
+      return { p, got: got - waived, paid: paid - waived, used, kused, bused, owe: got - cleared, cards, kcards, bcards, jcards, jkcards };
     })
     .sort((a, b) => b.owe - a.owe || b.got - a.got || b.cards - a.cards || b.kcards - a.kcards || b.bcards - a.bcards || a.p.localeCompare(b.p, 'th'));
   const maxOwe = rows.length ? rows[0].owe : 0;
