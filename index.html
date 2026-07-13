@@ -192,6 +192,7 @@
   .pm-row { display: flex; flex-wrap: wrap; gap: 6px; }
   .pm-stat { display: flex; flex-wrap: wrap; gap: 7px 18px; font-size: .9rem; }
   .pm-stat b { font-variant-numeric: tabular-nums; color: var(--text); }
+  .pm-sub { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
   .pm-card-chip { background: var(--card-2); border: 1px solid var(--border); border-radius: 8px; padding: 4px 11px; font-size: .84rem; }
   .big-rule { background: var(--purple-bg); border: 1px solid var(--border); border-left: 3px solid var(--purple); border-radius: var(--radius); padding: 10px 13px; margin-bottom: 12px; font-size: .84rem; line-height: 1.6; }
   .big-rule b { color: var(--purple); }
@@ -926,9 +927,37 @@ function personStats(p) {
     jadtemKill: held(JADTEMKILL, JADTEMKILL_USED, null)
   };
 }
+// ผลรายคู่สำหรับสถิติ: manner ใช้ m.outcome, ที่เหลือใช้สกอร์ที่จบแล้ว
+function matchOutcome(m) {
+  if (m.format === 'manner') return { done: m.outcome != null, result: m.outcome };
+  const sc = resolveScore(m);
+  if (!sc || !sc.final) return { done: false, result: null };
+  return { done: true, result: matchResult(m, sc.favScore, sc.dogScore) };
+}
+// อัตราการถูกของคนๆ นึง (รายข้อ · ไม่รวมคู่โบนัส) + 10 นัดล่าสุด
+function personAccuracy(p) {
+  const hist = DAILY.slice()
+    .filter(m => !m.bonusOnly && m.picks)
+    .sort((a, b) => (a.date === b.date ? a.id - b.id : a.date.localeCompare(b.date)))
+    .map(m => {
+      let side = null;
+      for (const [k, arr] of Object.entries(m.picks)) if (arr.some(x => x.name === p)) { side = k; break; }
+      if (side == null) return null;
+      const o = matchOutcome(m);
+      return o.done ? (side === o.result) : null;
+    })
+    .filter(v => v !== null);
+  const last = hist.slice(-10);
+  return {
+    total: hist.length, correct: hist.filter(Boolean).length,
+    l10n: last.length, l10correct: last.filter(Boolean).length
+  };
+}
 function personInfoHtml(p) {
   const b = BIG_BETS[p] || { teams: [] };
   const s = personStats(p);
+  const acc = personAccuracy(p);
+  const pct = (c, n) => n ? Math.round(c / n * 100) + '%' : '-';
   const hits = b.teams.filter(t => SEMIS_ACTUAL.includes(t)).length;
   const teamsHtml = b.teams.length
     ? '<div class="pm-row">' + b.teams.map(teamChip).join('') + '</div>' + (b.orig ? '<div class="orig">ตามโพย: ' + esc(b.orig) + '</div>' : '')
@@ -945,6 +974,10 @@ function personInfoHtml(p) {
     : '<div class="empty">— ไม่มีบัตรถืออยู่ —</div>';
   return '<div class="pm-sec"><div class="pm-label">🏆 โพยใหญ่ (ทายเข้ารอบรองฯ)' +
       (SEMIS_ACTUAL.length && b.teams.length ? ' — ถูก ' + hits + '/4' : '') + '</div>' + teamsHtml + '</div>' +
+    '<div class="pm-sec"><div class="pm-label">📊 สถิติทายผล (รายข้อ · ไม่รวมคู่โบนัส)</div><div class="pm-stat">' +
+      '<span>อัตราถูก <b>' + pct(acc.correct, acc.total) + '</b>' + (acc.total ? ' <span class="pm-sub">(' + acc.correct + '/' + acc.total + ')</span>' : '') + '</span>' +
+      '<span>10 นัดล่าสุด <b>' + pct(acc.l10correct, acc.l10n) + '</b>' + (acc.l10n ? ' <span class="pm-sub">(' + acc.l10correct + '/' + acc.l10n + ')</span>' : '') + '</span>' +
+    '</div></div>' +
     '<div class="pm-sec"><div class="pm-label">🍵 ยาขม</div><div class="pm-stat">' +
       '<span>โดน <b>' + s.got + '</b> ซอง</span>' +
       '<span>ใช้หนี้แล้ว <b>' + esc(paidDetail) + '</b></span>' +
