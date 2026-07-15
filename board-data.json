@@ -69,7 +69,7 @@
       { "id": 100, "half": "R", "datetime": "2026-07-12T01:00:00Z", "home": { "team": "อาร์เจนตินา" }, "away": { "team": "สวิตเซอร์แลนด์" }, "homeScore": 3, "awayScore": 1 }
     ],
     "sf": [
-      { "id": 101, "half": "L", "datetime": "2026-07-14T19:00:00Z", "home": { "team": "ฝรั่งเศส" }, "away": { "team": "สเปน" }, "homeScore": null, "awayScore": null },
+      { "id": 101, "half": "L", "datetime": "2026-07-14T19:00:00Z", "home": { "team": "ฝรั่งเศส" }, "away": { "team": "สเปน" }, "homeScore": 0, "awayScore": 2 },
       { "id": 102, "half": "R", "datetime": "2026-07-15T19:00:00Z", "home": { "team": "อังกฤษ" }, "away": { "team": "อาร์เจนตินา" }, "homeScore": null, "awayScore": null }
     ]
   },
