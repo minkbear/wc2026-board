@@ -945,22 +945,45 @@ function renderRank() {
   const teams = rb.teams || [];
   const actual = rb.actual || [];
   const known = teams.length > 0 && actual.length === teams.length;
+  // ล็อกจากผลรอบรองฯ (ก่อนรู้อันดับจริงครบ): แชมป์/รองแชมป์ต้องเป็นผู้ชนะ SF · ที่ 3-4 ต้องเป็นผู้แพ้ SF
+  // → ช่องไหนขัดกับเงื่อนไขนี้ = ผิดแน่นอนแล้ว มาร์ก ✗ ได้เลยไม่ต้องรอนัดชิง
+  const finalists = [], sfLosers = [];
+  const sfDone = (KNOCKOUT.sf || []).filter(m => m.homeScore != null && m.awayScore != null);
+  if (!known && sfDone.length === 2) for (const m of sfDone) {
+    const homeWin = m.homeScore !== m.awayScore ? m.homeScore > m.awayScore : (m.winner === 'home');
+    finalists.push((homeWin ? m.home : m.away).team);
+    sfLosers.push((homeWin ? m.away : m.home).team);
+  }
+  const lockKnown = finalists.length === 2;
+  const lockedMiss = (t, i) => lockKnown && ((i < 2 && sfLosers.includes(t)) || (i >= 2 && finalists.includes(t)));
   document.getElementById('rank-actual').innerHTML = known
     ? '🏁 อันดับจริง: ' + actual.map((t, i) => '<b>' + (i + 1) + '. ' + esc(t) + '</b>').join(' &nbsp; ')
-    : '🏁 อันดับจริง 4 ทีมสุดท้าย: <span class="pending">ยังไม่รู้ผล — รอจบรอบรองฯ · ชิงที่ 3 · ชิงชนะเลิศ</span>';
+    : (lockKnown
+      ? '🏁 รู้จากรอบรองฯ แล้ว: <b>คู่ชิง (ที่ 1-2) = ' + finalists.map(esc).join(' / ') + '</b> · <b>ที่ 3-4 = ' + sfLosers.map(esc).join(' / ') + '</b> — ช่องที่ขัดกับผลนี้ถูกมาร์ก ✗ ผิดแน่แล้ว (เหลือรอนัดชิง + ชิงที่ 3 ตัดสินอันดับในคู่)'
+      : '🏁 อันดับจริง 4 ทีมสุดท้าย: <span class="pending">ยังไม่รู้ผล — รอจบรอบรองฯ · ชิงที่ 3 · ชิงชนะเลิศ</span>');
   const tierTxt = c => c >= 3 ? 'รอด' : c === 2 ? 'โดน 2 ซอง' : c === 1 ? 'โดน 3 ซอง' : 'โดน 4 ซอง';
   document.getElementById('rank-grid').innerHTML = PEOPLE.map(p => {
     const picks = (rb.picks || {})[p];
     if (!picks || !picks.length) return '';
-    let correct = 0;
+    let correct = 0, locked = 0;
     const chips = picks.map((t, i) => {
-      const hit = known && actual[i] === t, miss = known && actual[i] !== t;
+      const hit = known && actual[i] === t, miss = (known && actual[i] !== t) || lockedMiss(t, i);
       if (hit) correct++;
-      return '<span class="rank-pos' + (hit ? ' hit' : (miss ? ' miss' : '')) + '"><span class="rp-n">' + (i + 1) + '</span>' + esc(t) + '</span>';
+      if (!known && lockedMiss(t, i)) locked++;
+      return '<span class="rank-pos' + (hit ? ' hit' : (miss ? ' miss' : '')) + '"><span class="rp-n">' + (i + 1) + '</span>' + esc(t) + (!known && lockedMiss(t, i) ? ' ✗' : '') + '</span>';
     }).join('');
+    const badge = known
+      ? '<span class="hits' + (correct >= 3 ? '' : ' bad') + '">ถูก ' + correct + '/4 · ' + tierTxt(correct) + '</span>'
+      : (lockKnown
+        ? (locked === 4
+          ? '<span class="hits bad">ผิดแน่ทั้ง 4 · ' + tierTxt(0) + '</span>'
+          : (locked > 0
+            ? '<span class="hits bad">ผิดแน่ ' + locked + ' ช่อง · ลุ้นได้สูงสุดถูก ' + (4 - locked) + '</span>'
+            : '<span class="hits">ยังลุ้นครบ 4/4</span>'))
+        : '');
     return '<div class="big-card">' +
       '<div class="name"><span class="pname" role="button" tabindex="0" data-person="' + esc(p) + '" aria-label="ดูข้อมูล ' + esc(p) + '" translate="no">' + esc(p) + '</span>' +
-      (known ? '<span class="hits' + (correct >= 3 ? '' : ' bad') + '">ถูก ' + correct + '/4 · ' + tierTxt(correct) + '</span>' : '') +
+      badge +
       '</div><div class="teams">' + chips + '</div></div>';
   }).join('');
 }
