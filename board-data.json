@@ -73,7 +73,7 @@
       { "id": 102, "half": "R", "datetime": "2026-07-15T19:00:00Z", "home": { "team": "อังกฤษ" }, "away": { "team": "อาร์เจนตินา" }, "homeScore": 1, "awayScore": 2 }
     ],
     "final": [
-      { "id": 103, "datetime": "2026-07-19T19:00:00Z", "home": { "team": "สเปน" }, "away": { "team": "อาร์เจนตินา" }, "homeScore": null, "awayScore": null }
+      { "id": 103, "datetime": "2026-07-19T19:00:00Z", "home": { "team": "สเปน" }, "away": { "team": "อาร์เจนตินา" }, "homeScore": 1, "awayScore": 0 }
     ]
   },
   "yakhom": [
